@@ -24,7 +24,8 @@ export default {
   },
   updateUser(user) {
     const token = localStorage.getItem('token');
-    return apiClient.put(`/users/${user.id}`, user, {
+    console.log(user._id);
+    return apiClient.put(`/users/${user._id}`, user, {
       headers: {
         Authorization: `Bearer ${token}`
       }

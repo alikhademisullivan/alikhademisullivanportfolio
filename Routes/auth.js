@@ -37,7 +37,7 @@ const verifyToken = (req, res, next) => {
 
 router.get('/users', verifyToken, async (req, res) => {
     try {
-        const users = await User.find({}, '_id email username password');
+        const users = await User.find({}, '_id email username');
         res.status(200).json(users);
     } catch (error) {
       console.error('Detailed error:', error);
@@ -78,14 +78,15 @@ router.post('/register', async (req, res) => {
   
   router.put('/users/:id', verifyToken, async (req, res) => {
     try {
-      const { email, username, password } = req.body;
+      const { email, username } = req.body;
       const updateData = { email, username };
-      if (password) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        updateData.password = hashedPassword;
+
+      const updatedUser = await User.findByIdAndUpdate(req.params.id, updateData, { new: true });
+
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
       }
-      await User.findByIdAndUpdate(req.params.id, updateData);
-      res.status(200).json({ message: 'User updated successfully' });
+        res.status(200).json({ message: 'User updated successfully' });
     } catch (error) {
       res.status(500).json({ message: 'Error updating user', error });
     }

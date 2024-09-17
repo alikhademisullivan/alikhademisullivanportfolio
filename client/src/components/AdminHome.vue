@@ -33,10 +33,7 @@
             <label for="username">Name:</label>
             <input type="text" v-model="editUser.username" required />
           </div>
-          <div class="form-group">
-            <label for="password">Password:</label>
-            <input type="password" v-model="editUser.password" />
-          </div>
+        
           <button type="submit" class="save-button">Save</button>
         </form>
       </div>
@@ -56,7 +53,6 @@ export default {
         id: '',
         email: '',
         username: '',
-        password: ''
       }
     };
   },
@@ -70,6 +66,7 @@ export default {
   },
   methods: {
     openEditModal(user) {
+      console.log(user);
       this.editUser = { ...user };
       this.showModal = true;
     },
