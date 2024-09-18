@@ -1,39 +1,93 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../Models/User');
+const Projects = require('../Models/Projects');
+
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const multer = require('multer');
+const path = require('path');
+
+
+
+// Set up multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'public/images');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
 
 
 const secretKey = process.env.JWT_SECRET || 'your_default_secret_key';
 console.log('Secret Key:', secretKey);
 
+
+
+//resume
+// Set up multer for resume uploads
+const resumeStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'public/resumes');
+  },
+  filename: (req, file, cb) => {
+    cb(null, 'resume.pdf'); // Always save the file as resume.pdf
+  }
+});
+
+const resumeUpload = multer({ storage: resumeStorage });
+
 // Middleware to verify token
 const verifyToken = (req, res, next) => {
-    const token = req.headers['authorization'];
-    console.log('Authorization Header:', token); // Log the authorization header
-  
-    if (!token) {
-      console.log('No token provided');
-      return res.status(403).json({ message: 'No token provided' });
-    }
-  
-    const tokenPart = token.split(' ')[1];
-    console.log('Token Part:', tokenPart); // Log the token part
-  
-    jwt.verify(tokenPart, secretKey, (err, decoded) => {
-      if (err) {
-        console.log('Token verification failed:', err); // Log the error
-        return res.status(500).json({ message: 'Failed to authenticate token' });
-      }
-      console.log('Decoded Token:', decoded); // Log the decoded token
-      req.userId = decoded.id;
-      next();
-    });
-  };
-  
+  const token = req.headers['authorization'];
+  console.log('Authorization Header:', token); // Log the authorization header
 
+  if (!token) {
+    console.log('No token provided');
+    return res.status(403).json({ message: 'No token provided' });
+  }
+
+  const tokenPart = token.split(' ')[1];
+  console.log('Token Part:', tokenPart); // Log the token part
+
+  jwt.verify(tokenPart, secretKey, (err, decoded) => {
+    if (err) {
+      console.log('Token verification failed:', err); // Log the error
+      return res.status(500).json({ message: 'Failed to authenticate token' });
+    }
+    console.log('Decoded Token:', decoded); // Log the decoded token
+    req.userId = decoded.id;
+    next();
+  });
+};
+
+
+
+
+
+router.post('/uploadResume', verifyToken, resumeUpload.single('resume'), (req, res) => {
+  const file = req.file;
+  if (!file) {
+    return res.status(400).send('No file uploaded.');
+  }
+  res.send('Resume uploaded successfully.');
+});
+
+
+
+
+
+
+
+
+
+  
+  
 
 router.get('/users', verifyToken, async (req, res) => {
     try {
@@ -44,6 +98,94 @@ router.get('/users', verifyToken, async (req, res) => {
       res.status(500).json({ message: 'Error fetching users', error });
     }
   });
+
+  //projects
+  
+
+router.delete('/deleteProject/:id', async (req, res) => {
+  try {
+      const project = await Projects.findByIdAndDelete(req.params.id);
+      if (!project) {
+          return res.status(404).json({ message: 'Project not found' });
+      }
+      res.status(200).json({ message: 'Project deleted successfully' });
+  } catch (err) {
+      console.error('Error during project deletion:', err);
+      res.status(500).json({ message: err.message });
+  }
+});
+
+router.put('/editProject/:id', upload.single('Image'), async (req, res) => {
+  const { name, githublink, Description } = req.body;
+  const Image = req.file ? { data: req.file.filename, contentType: req.file.mimetype } : null;
+
+  try {
+    let project = await Projects.findById(req.params.id);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    project.name = name || project.name;
+    project.githublink = githublink || project.githublink;
+    project.Description = Description || project.Description;
+    if (Image) {
+      project.Image = Image;
+    }
+
+    await project.save();
+    res.status(200).json({ message: 'Project updated successfully', project });
+  } catch (err) {
+    console.error('Error during project update:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+router.post('/addProject', upload.single('Image'), async (req, res) => {
+  const { name, githublink, Description } = req.body;
+  console.log(req.file.filename);
+  const Image = req.file ? { data: req.file.filename, contentType: req.file.mimetype } : null;
+
+  console.log('Received project addition request:', req.body);
+
+  try {
+    let project = await Projects.findOne({ name });
+    if (project) {
+      console.log('Project already exists');
+      return res.status(400).json({ message: 'Project already exists' });
+    }
+
+    project = new Projects({ name, githublink, Description, Image });
+    await project.save();
+    console.log('Project saved:', project);
+
+    res.status(201).json({ message: 'Project added successfully', project });
+  } catch (err) {
+    console.error('Error during project addition:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+// Route to get all projects
+router.get('/getAllProjects', async (req, res) => {
+  try {
+    const projects = await Projects.find();
+    res.status(200).json(projects);
+  } catch (err) {
+    console.error('Error fetching projects:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+
+
+
+
+
+
+
   
   
 

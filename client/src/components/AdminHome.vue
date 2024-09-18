@@ -19,6 +19,11 @@
         </tr>
       </tbody>
     </table>
+    <form @submit.prevent="uploadResume">
+      <h3>Upload Resume</h3>
+      <input type="file" @change="handleFileUpload" />
+      <button type="submit">Upload Resume</button>
+    </form>
 
     <div v-if="showModal" class="modal">
       <div class="modal-content">
@@ -53,7 +58,9 @@ export default {
         id: '',
         email: '',
         username: '',
-      }
+      },
+      resumeFile: null
+
     };
   },
   async created() {
@@ -83,6 +90,23 @@ export default {
       } catch (error) {
         console.error('Failed to update user:', error);
       }
+    },
+    handleFileUpload(event) {
+      this.resumeFile = event.target.files[0];
+    },
+    async uploadResume() {
+      if (!this.resumeFile) {
+        alert('Please select a file.');
+        return;
+      }
+      const formData = new FormData();
+      formData.append('resume', this.resumeFile);
+      try {
+        const response = await AuthService.uploadResume(formData);
+        alert(response.data);
+      } catch (error) {
+        alert('Error uploading file.');
+      }
     }
   },
   name: 'AdminHome'
@@ -98,6 +122,11 @@ export default {
 }
 
 h2 {
+  color: #4caf50;
+  text-align: center;
+  margin-bottom: 20px;
+}
+h3 {
   color: #4caf50;
   text-align: center;
   margin-bottom: 20px;

@@ -3,6 +3,8 @@ import Home from '../components/SiteHome.vue';
 import UserLogin from '../components/UserLogin.vue';
 import UserRegister from '../components/UserRegister.vue';
 import Admin from '@/components/AdminHome.vue';
+import ProjectsHome from '../components/ProjectsHome.vue';
+
 import AuthService from '../services/AuthService';
 
 
@@ -22,6 +24,11 @@ const routes = [
     path: '/login',
     name: 'UserLogin',
     component: UserLogin
+  },
+  {
+    path: '/projects',
+    name: 'ProjectsHome',
+    component: ProjectsHome
   },
   {
     path: '/admin',

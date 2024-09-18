@@ -19,6 +19,8 @@ export default {
       return response;
     });
   },
+ 
+
   isAuthenticated() {
     return !!localStorage.getItem('token');
   },
@@ -40,6 +42,15 @@ export default {
     const token = localStorage.getItem('token');
     return apiClient.get('/users', {
       headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  },
+  uploadResume(formData) {
+    const token = localStorage.getItem('token');
+    return apiClient.post('/uploadResume', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
         Authorization: `Bearer ${token}`
       }
     });

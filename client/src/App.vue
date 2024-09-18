@@ -2,7 +2,9 @@
   <div id="app">
     <nav class="navbar">
       <router-link class="nav-link" to="/">Home</router-link>
-      <router-link class="nav-link" to="/register">Register</router-link>
+      <router-link class="nav-link" to="/projects">Projects</router-link>
+
+      <router-link v-if="!isAuthenticated" class="nav-link" to="/register">Register</router-link>
       <router-link class="nav-link" to="/login">Login</router-link>
       <router-link v-if="isAuthenticated" class="nav-link" to="/admin">Admin</router-link>
     </nav>
@@ -27,7 +29,14 @@ export default {
   }
 };
 </script>
+<style>
 
+body {
+  margin: 0;
+  
+}
+
+</style>
 <style scoped>
 body {
   margin: 0;
