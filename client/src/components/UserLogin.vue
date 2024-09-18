@@ -28,6 +28,11 @@ export default {
     };
   },
   name: 'UserLogin',
+  mounted() {
+    if (AuthService.isAuthenticated()) {
+      this.$router.push({ name: 'Admin' });
+    }
+  },
   methods: {
     async login() {
       try {
@@ -37,6 +42,8 @@ export default {
         });
         console.log('Login successful:', response.data);
         this.$emit('login-success'); // Emit an event on successful login
+        this.$router.push({ name: 'Admin' });
+
       } catch (error) {
         console.error('Login failed:', error);
       }

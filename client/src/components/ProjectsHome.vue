@@ -40,6 +40,8 @@
         <p>{{ project.Description }}</p>
         <a :href="project.githublink" target="_blank">GitHub Link</a>
         <button @click="openEditProjectPopup(project)">Edit</button>
+        <button @click="deleteProject(project._id)">Delete</button>
+
 
       </li>
     </ul>
@@ -105,6 +107,16 @@ methods: {
       console.error('Error adding project:', error);
     }
   },
+  async deleteProject(projectId) {
+      try {
+        await ProjectService.deleteProject(projectId);
+        // Refresh the project list
+        const response = await ProjectService.getAllProjects();
+        this.projects = response.data;
+      } catch (error) {
+        console.error('Failed to delete project:', error);
+      }
+    },
   async editProjectDetails() {
     const formData = new FormData();
     formData.append('name', this.editProject.name);
@@ -215,32 +227,14 @@ button:hover {
   text-decoration: underline;
 }
 
-.popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
 
-.popup-content {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 300px;
-}
 
-button {
-  margin: 5px;
-}
+
 </style>
 
 
 
+<style scoped src="../css/popup.css"></style>
 
 
 

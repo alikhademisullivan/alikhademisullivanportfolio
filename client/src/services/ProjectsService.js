@@ -27,7 +27,11 @@ export default {
             'Content-Type': 'multipart/form-data'
           }
         });
+      },
+      deleteProject(projectId) {
+        return apiClient.delete(`/deleteProject/${projectId}`);
       }
+    
 
 
 

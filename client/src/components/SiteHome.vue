@@ -7,9 +7,9 @@
 
       <nav>
         <ul>
-          <li><a href="https://www.linkedin.com/in/ali-khademi-sullivan-49930b24a/" target="_blank">LinkedIn</a></li>
-          <li><a  href="https://github.com/alikhademisullivan" target="_blank">GitHub</a></li>
-          <li><a target="_blank" href="http://localhost:5000/resumes/resume.pdf" download>Download Resume</a></li>
+          <li><a href="https://www.linkedin.com/in/ali-khademi-sullivan-49930b24a/" target="_blank"><i class="fab fa-linkedin" title="LinkedIn"></i></a></li>
+          <li><a  href="https://github.com/alikhademisullivan" target="_blank"><i title="Github" class="fab fa-github"></i></a></li>
+          <li><a target="_blank" href="http://localhost:5000/resumes/resume.pdf" download><i title="Resume" class="fas fa-file-alt"></i></a></li>
         </ul>
       </nav>
     </header>
@@ -17,7 +17,10 @@
       <section class="intro">
         <h2>Welcome to My Portfolio</h2>
         <p>
-          Hi, I'm [Your Name], a passionate [Your Profession]. This is my personal portfolio where you can learn more about me, my skills, and my projects.
+          Hi, I'm Ali Khademi Sullivan, a passionate student studying Software Engineering at the University of Western Ontario. 
+        </p>
+        <p>   
+          This is my personal portfolio where you can learn more about me, my skills, and my projects.
         </p>
         <img src="@/assets/alikhademisullivan.jpg" alt="Ali Khademi Sullivan" class="profile-image" />
 

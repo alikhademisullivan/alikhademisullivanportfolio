@@ -1,12 +1,18 @@
 <template>
   <div id="app">
     <nav class="navbar">
+      <img src="@/assets/logoalikhademisullivan.png" alt="AKS logo" class="profile-image" />
+
       <router-link class="nav-link" to="/">Home</router-link>
       <router-link class="nav-link" to="/projects">Projects</router-link>
+      <router-link class="nav-link" to="/experience">Experience</router-link>
 
       <router-link v-if="!isAuthenticated" class="nav-link" to="/register">Register</router-link>
-      <router-link class="nav-link" to="/login">Login</router-link>
+      <router-link v-if="!isAuthenticated" class="nav-link" to="/login">Login</router-link>
+
       <router-link v-if="isAuthenticated" class="nav-link" to="/admin">Admin</router-link>
+      <router-link v-if="isAuthenticated" class="nav-link" to="/logout">Logout</router-link>
+
     </nav>
     <router-view @login-success="updateAuthStatus"/>
   </div>
@@ -38,6 +44,11 @@ body {
 
 </style>
 <style scoped>
+.profile-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}
 body {
   margin: 0;
   font-family: Arial, sans-serif;

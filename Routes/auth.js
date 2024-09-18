@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../Models/User');
 const Projects = require('../Models/Projects');
+const Experiences = require('../Models/Experiences');
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -99,11 +100,112 @@ router.get('/users', verifyToken, async (req, res) => {
     }
   });
 
+
+
+//Experiences
+
+
+router.delete('/deleteExperience/:id', async (req, res) => {
+  try {
+    
+      const experience = await Experiences.findByIdAndDelete(req.params.id);
+      if (!experience) {
+          return res.status(404).json({ message: 'Experience not found' });
+      }
+      res.status(200).json({ message: 'Experience deleted successfully' });
+  } catch (err) {
+      console.error('Error during experience deletion:', err);
+      res.status(500).json({ message: err.message });
+  }
+});
+
+router.put('/editExperience/:id', upload.single('Image'), async (req, res) => {
+  const { name, Description,Company,positionName,startDate,endDate,skills } = req.body;
+  const Image = req.file ? { data: req.file.filename, contentType: req.file.mimetype } : null;
+
+  try {
+    let experience = await Experiences.findById(req.params.id);
+    if (!experience) {
+      return res.status(404).json({ message: 'Experience not found' });
+    }
+
+    experience.name = name || experience.name;
+    experience.skills = skills || experience.skills;
+    experience.Company = Company || experience.Company;
+    experience.positionName = positionName || experience.positionName;
+    experience.startDate = startDate || experience.startDate;
+    experience.endDate = endDate || experience.endDate;
+
+    experience.Description = Description || experience.Description;
+    if (Image) {
+      experience.Image = Image;
+    }
+
+    await experience.save();
+    res.status(200).json({ message: 'Experience updated successfully', experience });
+  } catch (err) {
+    console.error('Error during experience update:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+router.post('/addExperience', upload.single('Image'), async (req, res) => {
+  const { name, Description,Company,positionName,startDate,endDate,skills } = req.body;
+  console.log(req.file.filename);
+  const Image = req.file ? { data: req.file.filename, contentType: req.file.mimetype } : null;
+
+  console.log('Received experience addition request:', req.body);
+
+  try {
+    let experience = await Experiences.findOne({ name });
+    if (experience) {
+      console.log('Experience already exists');
+      return res.status(400).json({ message: 'Experience already exists' });
+    }
+
+    experience = new Experiences({ name, Description,Company,positionName,startDate,endDate,skills,Image });
+    await experience.save();
+    console.log('Project saved:', experience);
+
+    res.status(201).json({ message: 'Experience added successfully', experience });
+  } catch (err) {
+    console.error('Error during experience addition:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+// Route to get all projects
+router.get('/getAllExperiences', async (req, res) => {
+  try {
+    const experiences = await Experiences.find();
+    res.status(200).json(experiences);
+  } catch (err) {
+    console.error('Error fetching experiences:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   //projects
   
 
 router.delete('/deleteProject/:id', async (req, res) => {
   try {
+    
       const project = await Projects.findByIdAndDelete(req.params.id);
       if (!project) {
           return res.status(404).json({ message: 'Project not found' });

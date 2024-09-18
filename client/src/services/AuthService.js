@@ -9,13 +9,16 @@ const apiClient = axios.create({
   }
 });
 
+
+
+
+
 export default {
   register(user) {
     return apiClient.post('/register', user);
   },
   login(user) {
     return apiClient.post('/login', user).then(response => {
-      localStorage.setItem('token', response.data.token);
       return response;
     });
   },
