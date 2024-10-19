@@ -45,7 +45,7 @@
 
     <ul class="experience-list">
       <li v-for="experience in experiences" :key="experience._id" class="experience-item">
-        <img v-if="experience.Image" :src="getImage(experience.Image.data)" alt="Experience Image" class="experience-image" />
+        <img v-if="experience.Image" :src="experience.Image.data" alt="Experience Image" class="experience-image" />
         <h3>{{ experience.name }}</h3>
         <p>{{ experience.positionName }}</p>
         <p>{{ experience.Description }}</p>

@@ -14,17 +14,25 @@ export default {
       return apiClient.get('/auth/getAllExperiences');
     },
     addExperience(formData) {
+      const token = localStorage.getItem('token');
+
         
       return apiClient.post('/auth/addExperience', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+
         }
       });
     },
     editExperience(experienceid, formData) {
+      const token = localStorage.getItem('token');
+
         return apiClient.put(`/auth/editExperience/${experienceid}`, formData, {
           headers: {
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
+
           }
         });
       },

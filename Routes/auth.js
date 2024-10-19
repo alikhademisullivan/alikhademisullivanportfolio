@@ -226,62 +226,127 @@ router.delete('/deleteExperience/:id', async (req, res) => {
   }
 });
 
-router.put('/editExperience/:id', upload.single('Image'), async (req, res) => {
-  const { name, Description,Company,positionName,startDate,endDate } = req.body;
-  const Image = req.file ? { data: req.file.filename, contentType: req.file.mimetype } : null;
+router.put('/editExperience/:id', verifyToken, uploadresume.single('Image'), async (req, res) => {
+  const { name, Description, Company, positionName, startDate, endDate } = req.body;
   const skills = JSON.parse(req.body.skills);
-  try {
-    let experience = await Experiences.findById(req.params.id);
-    if (!experience) {
-      return res.status(404).json({ message: 'Experience not found' });
+
+  if (req.file) {
+    const blob = bucket.file('images/' + Date.now() + path.extname(req.file.originalname));
+    const blobStream = blob.createWriteStream({
+      resumable: false,
+    });
+
+    blobStream.on('error', (err) => {
+      console.error('Blob stream error:', err);
+      res.status(500).json({ message: 'Upload failed' });
+    });
+
+    blobStream.on('finish', async () => {
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+      const Image = { data: publicUrl, contentType: req.file.mimetype };
+
+      try {
+        let experience = await Experiences.findById(req.params.id);
+        if (!experience) {
+          return res.status(404).json({ message: 'Experience not found' });
+        }
+        experience.name = name || experience.name;
+        experience.skills = skills || experience.skills;
+        experience.Company = Company || experience.Company;
+        experience.positionName = positionName || experience.positionName;
+        experience.startDate = startDate || experience.startDate;
+        experience.endDate = endDate || experience.endDate;
+        experience.Description = Description || experience.Description;
+        experience.Image = Image;
+
+        await experience.save();
+        res.status(200).json({ message: 'Experience updated successfully', experience });
+      } catch (err) {
+        console.error('Error during experience update:', err);
+        res.status(500).json({ message: err.message });
+      }
+    });
+
+    blobStream.end(req.file.buffer);
+  } else {
+    try {
+      let experience = await Experiences.findById(req.params.id);
+      if (!experience) {
+        return res.status(404).json({ message: 'Experience not found' });
+      }
+      experience.name = name || experience.name;
+      experience.skills = skills || experience.skills;
+      experience.Company = Company || experience.Company;
+      experience.positionName = positionName || experience.positionName;
+      experience.startDate = startDate || experience.startDate;
+      experience.endDate = endDate || experience.endDate;
+      experience.Description = Description || experience.Description;
+
+      await experience.save();
+      res.status(200).json({ message: 'Experience updated successfully', experience });
+    } catch (err) {
+      console.error('Error during experience update:', err);
+      res.status(500).json({ message: err.message });
     }
-
-    experience.name = name || experience.name;
-    experience.skills = skills || experience.skills;
-    experience.Company = Company || experience.Company;
-    experience.positionName = positionName || experience.positionName;
-    experience.startDate = startDate || experience.startDate;
-    experience.endDate = endDate || experience.endDate;
-
-    experience.Description = Description || experience.Description;
-    if (Image) {
-      experience.Image = Image;
-    }
-
-    await experience.save();
-    res.status(200).json({ message: 'Experience updated successfully', experience });
-  } catch (err) {
-    console.error('Error during experience update:', err);
-    res.status(500).json({ message: err.message });
   }
 });
 
 
-router.post('/addExperience', upload.single('Image'), async (req, res) => {
-  const { name, Description,Company,positionName,startDate,endDate } = req.body;
-  console.log(req.file.filename);
+
+router.post('/addExperience', verifyToken, uploadresume.single('Image'), async (req, res) => {
+  const { name, Description, Company, positionName, startDate, endDate } = req.body;
   const skills = JSON.parse(req.body.skills);
-  const Image = req.file ? { data: req.file.filename, contentType: req.file.mimetype } : null;
 
-  console.log('Received experience addition request:', req.body);
+  if (req.file) {
+    const blob = bucket.file('images/' + Date.now() + path.extname(req.file.originalname));
+    const blobStream = blob.createWriteStream({
+      resumable: false,
+    });
 
-  try {
-    let experience = await Experiences.findOne({ name });
-    if (experience) {
-      console.log('Experience already exists');
-      return res.status(400).json({ message: 'Experience already exists' });
+    blobStream.on('error', (err) => {
+      console.error('Blob stream error:', err);
+      res.status(500).json({ message: 'Upload failed' });
+    });
+
+    blobStream.on('finish', async () => {
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+      const Image = { data: publicUrl, contentType: req.file.mimetype };
+
+      try {
+        let experience = await Experiences.findOne({ name });
+        if (experience) {
+          console.log('Experience already exists');
+          return res.status(400).json({ message: 'Experience already exists' });
+        }
+        experience = new Experiences({ name, Description, Company, positionName, startDate, endDate, skills, Image });
+        await experience.save();
+        console.log('Experience saved:', experience);
+        res.status(201).json({ message: 'Experience added successfully', experience });
+      } catch (err) {
+        console.error('Error during experience addition:', err);
+        res.status(500).json({ message: err.message });
+      }
+    });
+
+    blobStream.end(req.file.buffer);
+  } else {
+    try {
+      let experiencetest = await Experiences.findOne({ name });
+      if (experiencetest) {
+        console.log('Experience already exists');
+        return res.status(400).json({ message: 'Experience already exists' });
+      }
+      const experience = new Experiences({ name, Description, Company, positionName, startDate, endDate, skills });
+      await experience.save();
+      console.log('Experience saved:', experience);
+      res.status(201).json({ message: 'Experience added successfully', experience });
+    } catch (err) {
+      console.error('Error during experience addition:', err);
+      res.status(500).json({ message: err.message });
     }
-
-    experience = new Experiences({ name, Description,Company,positionName,startDate,endDate,skills,Image });
-    await experience.save();
-    console.log('Project saved:', experience);
-
-    res.status(201).json({ message: 'Experience added successfully', experience });
-  } catch (err) {
-    console.error('Error during experience addition:', err);
-    res.status(500).json({ message: err.message });
   }
 });
+
 
 
 // Route to get all projects
