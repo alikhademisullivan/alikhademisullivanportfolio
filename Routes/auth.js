@@ -86,8 +86,10 @@ const verifyToken = (req, res, next) => {
 
 
 // Create a Google Cloud Storage client
-const storageresume = new Storage();
-const bucket = storageresume.bucket('your-bucket-name'); // Replace with your bucket name
+const bucketstorage = new Storage();
+
+const bucketName = 'resumebucketalikhademi'; // Replace with your bucket name
+const bucket = bucketstorage.bucket(bucketName); // Replace with your bucket name
 
 const multerStorage = multer.memoryStorage();
 const uploadresume = multer({ storage: multerStorage });
@@ -122,6 +124,11 @@ router.post('/uploadResume', verifyToken, uploadresume.single('resume'), (req, r
 
 
 
+router.get('/resumes/:filename', (req, res) => {
+  const { filename } = req.params;
+  const publicUrl = `https://storage.googleapis.com/${bucket.name}/resumes/${filename}`;
+  res.redirect(publicUrl);
+});
 
 
 

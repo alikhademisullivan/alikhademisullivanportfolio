@@ -16,9 +16,10 @@ console.log(".env url "+process.env.VUE_APP_API_URL);
 
 export default {
   
-  getResume(resume) {
-    var url2 = url + resume;
-    return url2;
+  async getResume(resume) {
+    const url = process.env.VUE_APP_API_URL;
+    const publicUrl = `${url}/resumes/${resume}`;
+    return publicUrl;
   },
   register(user) {
     return apiClient.post('/auth/register', user);
