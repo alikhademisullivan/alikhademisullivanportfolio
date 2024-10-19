@@ -94,6 +94,23 @@ const bucket = bucketstorage.bucket(bucketName); // Replace with your bucket nam
 const multerStorage = multer.memoryStorage();
 const uploadresume = multer({ storage: multerStorage });
 
+async function makeBucketPublic() {
+  await bucket.iam.setPolicy({
+    bindings: [
+      {
+        role: 'roles/storage.objectViewer',
+        members: [
+          'allUsers'
+        ]
+      }
+    ]
+  });
+  console.log(`Bucket ${bucketName} is now publicly accessible.`);
+}
+
+makeBucketPublic().catch(console.error);
+
+
 router.post('/uploadResume', verifyToken, uploadresume.single('resume'), (req, res) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
@@ -130,7 +147,19 @@ router.get('/resumes/:filename', (req, res) => {
   res.redirect(publicUrl);
 });
 
+router.get('/image/:filename', async (req, res) => {
+  const { filename } = req.params;
+  const file = bucket.file(`images/${filename}`);
 
+  try {
+    await file.exists();
+    const publicUrl = `https://storage.googleapis.com/${bucketName}/images/${filename}`;
+    res.status(200).json({ url: publicUrl });
+  } catch (error) {
+    console.error('Error fetching image URL:', error);
+    res.status(500).json({ message: 'Failed to retrieve image URL' });
+  }
+});
 
 
 
@@ -296,56 +325,134 @@ router.delete('/deleteProject/:id', async (req, res) => {
   }
 });
 
-router.put('/editProject/:id', upload.single('Image'), async (req, res) => {
+router.put('/editProject/:id', verifyToken, uploadresume.single('Image'), async (req, res) => {
   const { name, githublink, Description } = req.body;
-  const Image = req.file ? { data: req.file.filename, contentType: req.file.mimetype } : null;
 
-  try {
-    let project = await Projects.findById(req.params.id);
-    if (!project) {
-      return res.status(404).json({ message: 'Project not found' });
+  if (req.file) {
+    const blob = bucket.file('images/' + Date.now() + path.extname(req.file.originalname));
+    const blobStream = blob.createWriteStream({
+      resumable: false,
+    });
+
+    blobStream.on('error', (err) => {
+      console.error('Blob stream error:', err);
+      res.status(500).json({ message: 'Upload failed' });
+    });
+
+    blobStream.on('finish', async () => {
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+      const Image = { data: publicUrl, contentType: req.file.mimetype };
+
+      try {
+        let project = await Projects.findById(req.params.id);
+        if (!project) {
+          return res.status(404).json({ message: 'Project not found' });
+        }
+        project.name = name || project.name;
+        project.githublink = githublink || project.githublink;
+        project.Description = Description || project.Description;
+        project.Image = Image;
+
+        await project.save();
+        res.status(200).json({ message: 'Project updated successfully', project });
+      } catch (err) {
+        console.error('Error during project update:', err);
+        res.status(500).json({ message: err.message });
+      }
+    });
+
+    blobStream.end(req.file.buffer);
+  } else {
+    try {
+      let project = await Projects.findById(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+      }
+      project.name = name || project.name;
+      project.githublink = githublink || project.githublink;
+      project.Description = Description || project.Description;
+
+      await project.save();
+      res.status(200).json({ message: 'Project updated successfully', project });
+    } catch (err) {
+      console.error('Error during project update:', err);
+      res.status(500).json({ message: err.message });
     }
-
-    project.name = name || project.name;
-    project.githublink = githublink || project.githublink;
-    project.Description = Description || project.Description;
-    if (Image) {
-      project.Image = Image;
-    }
-
-    await project.save();
-    res.status(200).json({ message: 'Project updated successfully', project });
-  } catch (err) {
-    console.error('Error during project update:', err);
-    res.status(500).json({ message: err.message });
   }
 });
 
 
-router.post('/addProject', upload.single('Image'), async (req, res) => {
+
+
+router.post('/addProject', verifyToken, uploadresume.single('Image'), (req, res) => {
   const { name, githublink, Description } = req.body;
-  console.log(req.file.filename);
-  const Image = req.file ? { data: req.file.filename, contentType: req.file.mimetype } : null;
 
-  console.log('Received project addition request:', req.body);
-
-  try {
-    let project = await Projects.findOne({ name });
-    if (project) {
-      console.log('Project already exists');
-      return res.status(400).json({ message: 'Project already exists' });
-    }
-
-    project = new Projects({ name, githublink, Description, Image });
-    await project.save();
-    console.log('Project saved:', project);
-
-    res.status(201).json({ message: 'Project added successfully', project });
-  } catch (err) {
-    console.error('Error during project addition:', err);
-    res.status(500).json({ message: err.message });
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
   }
+
+  const blob = bucket.file('images/' + Date.now() + path.extname(req.file.originalname));
+  const blobStream = blob.createWriteStream({
+    resumable: false,
+  });
+
+  blobStream.on('error', (err) => {
+    console.error('Blob stream error:', err);
+    res.status(500).json({ message: 'Upload failed' });
+  });
+
+  blobStream.on('finish', async () => {
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+
+    const Image = { data: publicUrl, contentType: req.file.mimetype };
+    console.log('Received project addition request:', req.body);
+
+    try {
+      let project = await Projects.findOne({ name });
+      if (project) {
+        console.log('Project already exists');
+        return res.status(400).json({ message: 'Project already exists' });
+      }
+      project = new Projects({ name, githublink, Description, Image });
+      await project.save();
+      console.log('Project saved:', project);
+      res.status(201).json({ message: 'Project added successfully', project });
+    } catch (err) {
+      console.error('Error during project addition:', err);
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  blobStream.end(req.file.buffer);
 });
+
+
+// router.post('/addProject', upload.single('Image'), async (req, res) => {
+//   const { name, githublink, Description } = req.body;
+//   console.log(req.file.filename);
+//   const Image = req.file ? { data: req.file.filename, contentType: req.file.mimetype } : null;
+
+//   console.log('Received project addition request:', req.body);
+
+//   try {
+//     let project = await Projects.findOne({ name });
+//     if (project) {
+//       console.log('Project already exists');
+//       return res.status(400).json({ message: 'Project already exists' });
+//     }
+
+//     project = new Projects({ name, githublink, Description, Image });
+//     await project.save();
+//     console.log('Project saved:', project);
+
+//     res.status(201).json({ message: 'Project added successfully', project });
+//   } catch (err) {
+//     console.error('Error during project addition:', err);
+//     res.status(500).json({ message: err.message });
+//   }
+// });
+
+
 
 
 // Route to get all projects

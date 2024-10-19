@@ -17,22 +17,38 @@ export default {
       return apiClient.get('/auth/getAllProjects');
     },
     addProject(formData) {
-        
+      const token = localStorage.getItem('token');
+
       return apiClient.post('/auth/addProject', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+
         }
       });
     },
     editProject(projectId, formData) {
+      const token = localStorage.getItem('token');
+
         return apiClient.put(`/auth/editProject/${projectId}`, formData, {
           headers: {
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
+
+
           }
         });
       },
       deleteProject(projectId) {
         return apiClient.delete(`/auth/deleteProject/${projectId}`);
+      },
+      async getImage(image) {
+        try {
+          const response = await apiClient.get(`/image/${image}`);
+          return response.data.url;
+        } catch (error) {
+          console.error('Error fetching image URL:', error);
+        }
       }
     
 

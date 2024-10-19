@@ -34,7 +34,7 @@
 
     <ul class="project-list">
       <li v-for="project in projects" :key="project._id" class="project-item">
-        <img v-if="project.Image" :src="getImage(project.Image.data)" alt="Project Image" class="project-image" />
+        <img v-if="project.Image" :src="project.Image.data" alt="Project Image" class="project-image" />
         <h3>{{ project.name }}</h3>
 
         <p>{{ project.Description }}</p>
@@ -120,10 +120,13 @@ methods: {
         console.error('Failed to delete project:', error);
       }
     },
-     getImage(image) {
-      var url = process.env.VUE_APP_API_URL+"/images/"
-        return url + image;
-      
+    async fetchImage(image) {
+    try {
+      const url = await ProjectService.getImage(image);
+      return url;
+    } catch (error) {
+      console.error('Error fetching image:', error);
+    }
     },
   async editProjectDetails() {
     const formData = new FormData();
