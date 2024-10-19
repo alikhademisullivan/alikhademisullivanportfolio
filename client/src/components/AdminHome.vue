@@ -6,6 +6,8 @@
         <tr>
           <th>Email</th>
           <th>Name</th>
+          <th>isAdmin</th>
+
           <th>Actions</th>
         </tr>
       </thead>
@@ -13,6 +15,8 @@
         <tr v-for="user in users" :key="user.id">
           <td>{{ user.email }}</td>
           <td>{{ user.username }}</td>
+          <td>{{ user.isAdmin }}</td>
+
           <td>
             <button @click="openEditModal(user)">Edit</button>
           </td>
@@ -21,8 +25,8 @@
     </table>
     <form @submit.prevent="uploadResume">
       <h3>Upload Resume</h3>
-      <input type="file" @change="handleFileUpload" />
-      <button type="submit">Upload Resume</button>
+      <input style="margin-bottom: 20px;" type="file" @change="handleFileUpload" />
+      <button  type="submit">Upload Resume</button>
     </form>
 
     <div v-if="showModal" class="modal">
@@ -38,7 +42,10 @@
             <label for="username">Name:</label>
             <input type="text" v-model="editUser.username" required />
           </div>
-        
+          <div class="form-group">
+            <label for="isAdmin">Admin:</label>
+            <input type="checkbox" v-model="editUser.isAdmin" />
+          </div>
           <button type="submit" class="save-button">Save</button>
         </form>
       </div>

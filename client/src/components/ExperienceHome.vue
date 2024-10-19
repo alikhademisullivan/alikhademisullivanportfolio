@@ -1,7 +1,7 @@
 <template>
   <div class="experience-container">
     <h1>Experience</h1>
-    <button @click="showAddExperiencePopup = true">Add New Experience</button>
+    <button v-if="isAuthenticated" @click="showAddExperiencePopup = true">Add New Experience</button>
     <div v-if="showAddExperiencePopup" class="popup">
       <div class="popup-content">
         <h2>Add New Experience</h2>
@@ -45,7 +45,7 @@
 
     <ul class="experience-list">
       <li v-for="experience in experiences" :key="experience._id" class="experience-item">
-        <img v-if="experience.Image" :src="`http://localhost:5000/images/${experience.Image.data}`" alt="Experience Image" class="experience-image" />
+        <img v-if="experience.Image" :src="getImage(experience.Image.data)" alt="Experience Image" class="experience-image" />
         <h3>{{ experience.name }}</h3>
         <p>{{ experience.positionName }}</p>
         <p>{{ experience.Description }}</p>
@@ -58,8 +58,8 @@
           <span class="end-date">{{ formatDate(experience.endDate) }}</span>
         </p>
 
-        <button @click="openEditExperiencePopup(experience)">Edit</button>
-        <button @click="deleteExperience(experience._id)">Delete</button>
+        <button v-if="isAuthenticated" @click="openEditExperiencePopup(experience)">Edit</button>
+        <button v-if="isAuthenticated" @click="deleteExperience(experience._id)">Delete</button>
       </li>
     </ul>
   </div>
@@ -69,7 +69,8 @@
     <script>
   
   import ExperienceService from '../services/ExperienceService';
-  
+  import AuthService from '../services/AuthService';
+
   export default {
     name: 'ExperienceHome',
     data() {
@@ -77,6 +78,8 @@
       experiences: [],
       showAddExperiencePopup: false,
       showEditExperiencePopup: false,
+      isAuthenticated: AuthService.isAdmin(),
+
       newExperience: {
         name: '',
         Description: '',
@@ -105,9 +108,19 @@
       try {
         const response = await ExperienceService.getAllExperiencies();
         this.experiences = response.data;
+    //     this.experiences.forEach(experience => {
+    //   if (experience.skills) {
+    //     console.log('Skills:', experience.skills);
+    //   }
+    // });
       } catch (error) {
         console.error('Error fetching projects:', error);
       }
+    },
+    getImage(image) {
+      var url = process.env.VUE_APP_API_URL+"/images/";
+        return url + image;
+      
     },
     handleFileUpload(event) {
       this.newExperience.Image = event.target.files[0];
@@ -123,7 +136,8 @@
       formData.append('positionName', this.newExperience.positionName);
       formData.append('startDate', this.newExperience.startDate);
       formData.append('endDate', this.newExperience.endDate);
-      formData.append('skills', this.newExperience.skills.split(',').map(skill => skill.trim()));
+      const skillsArray = this.newExperience.skills.split(',').map(skill => skill.trim());
+      formData.append('skills', JSON.stringify(skillsArray));
       if (this.newExperience.Image) {
         formData.append('Image', this.newExperience.Image);
       }
@@ -158,10 +172,20 @@
       formData.append('positionName', this.editExperience.positionName);
       formData.append('startDate', this.editExperience.startDate);
       formData.append('endDate', this.editExperience.endDate);
-      formData.append('skills', this.editExperience.skills.split(',').map(skill => skill.trim()));
-      if (this.editExperience.Image) {
-        formData.append('Image', this.editExperience.Image);
-      }
+      console.log('skillsArray', this.editExperience.skills); // Logs the array correctly
+
+      if (typeof this.editExperience.skills === 'string') {
+      const skillsArray = this.editExperience.skills.split(',').map(skill => skill.trim());
+      formData.append('skills', JSON.stringify(skillsArray));
+    } else {
+      formData.append('skills', JSON.stringify(this.editExperience.skills));
+    }
+
+
+    console.log(this.editExperience.skills);
+        if (this.editExperience.Image) {
+            formData.append('Image', this.editExperience.Image);
+          }
   
       try {
         await ExperienceService.editExperience(this.editExperience._id, formData);
@@ -172,7 +196,14 @@
       }
     },
     openEditExperiencePopup(experience) {
-      this.editExperience = { ...experience, Image: null };
+      this.editExperience = {
+    ...experience,
+    startDate: experience.startDate ? new Date(experience.startDate).toISOString().split('T')[0] : null,
+    endDate: experience.endDate ? new Date(experience.endDate).toISOString().split('T')[0] : null,
+    Image: null
+      };
+    
+
       this.showEditExperiencePopup = true;
     }
   },

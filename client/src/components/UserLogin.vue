@@ -19,7 +19,21 @@
 
 <script>
 import AuthService from '../services/AuthService';
-
+import toastr from 'toastr';
+toastr.options = {
+  closeButton: true,
+  debug: false,
+  newestOnTop: false,
+  progressBar: true,
+  positionClass: 'toast-top-center',
+  showDuration: '1000',
+  timeOut: '5000',
+  extendedTimeOut: '1000',
+  showEasing: 'swing',
+  hideEasing: 'linear',
+  showMethod: 'fadeIn',
+  hideMethod: 'fadeOut'
+};
 export default {
   data() {
     return {
@@ -29,22 +43,33 @@ export default {
   },
   name: 'UserLogin',
   mounted() {
-    if (AuthService.isAuthenticated()) {
+    if (AuthService.isAdmin()) {
       this.$router.push({ name: 'Admin' });
     }
   },
   methods: {
     async login() {
       try {
-        const response = await AuthService.login({
+         await AuthService.login({
           email: this.email,
           password: this.password
         });
-        console.log('Login successful:', response.data);
         this.$emit('login-success'); // Emit an event on successful login
+        if (AuthService.isAdmin()) {
         this.$router.push({ name: 'Admin' });
+        toastr.success('Login Successful!');
+
+        }else{
+          this.$router.push({ name: 'SiteHome' });
+          toastr.success('Login Successful!');
+
+
+        }
+
 
       } catch (error) {
+        toastr.error('Login failed. Please review email and password');
+
         console.error('Login failed:', error);
       }
     }

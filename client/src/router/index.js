@@ -48,7 +48,7 @@ const routes = [
     name: 'Admin',
 
     beforeEnter: (to, from, next) => {
-      if (AuthService.isAuthenticated()) {
+      if (AuthService.isAdmin()) {
         next();
       } else {
         next('/login');

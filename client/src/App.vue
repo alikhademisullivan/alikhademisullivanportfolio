@@ -10,7 +10,7 @@
       <router-link v-if="!isAuthenticated" class="nav-link" to="/register">Register</router-link>
       <router-link v-if="!isAuthenticated" class="nav-link" to="/login">Login</router-link>
 
-      <router-link v-if="isAuthenticated" class="nav-link" to="/admin">Admin</router-link>
+      <router-link v-if="isAdmin" class="nav-link" to="/admin">Admin</router-link>
       <router-link v-if="isAuthenticated" class="nav-link" to="/logout">Logout</router-link>
 
     </nav>
@@ -25,12 +25,16 @@ export default {
   name: 'App',
   data() {
     return {
-      isAuthenticated: AuthService.isAuthenticated()
+      isAuthenticated: AuthService.isAuthenticated(),
+      isAdmin: AuthService.isAdmin()
+
     };
   },
   methods: {
     updateAuthStatus() {
       this.isAuthenticated = AuthService.isAuthenticated();
+      this.isAdmin = AuthService.isAuthenticated();
+
     }
   }
 };
@@ -78,5 +82,29 @@ body {
 
 .nav-link.active {
   background-color: #388e3c;
+}
+</style>
+
+
+
+
+<style >
+/* Custom Toastr Styles */
+.toast {
+  background-color: #4caf50 !important; /* Green background */
+  color: #ffffff !important; /* White text */
+  opacity: 1 !important; /* Remove transparency */
+}
+
+.toast-success {
+  background-color: #4caf50 !important; /* Green background for success */
+}
+
+.toast-error {
+  background-color: #f44336 !important; /* Red background for error */
+}
+
+.toast-message {
+  font-size: 16px !important; /* Increase font size */
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1>Projects</h1>
-    <button @click="showAddProjectPopup = true">Add New Project</button>
+    <button v-if="isAuthenticated" @click="showAddProjectPopup = true">Add New Project</button>
     <div v-if="showAddProjectPopup" class="popup">
       <div class="popup-content">
         <h2>Add New Project</h2>
@@ -34,13 +34,13 @@
 
     <ul class="project-list">
       <li v-for="project in projects" :key="project._id" class="project-item">
-        <img v-if="project.Image" :src="`http://localhost:5000/images/${project.Image.data}`" alt="Project Image" class="project-image" />
+        <img v-if="project.Image" :src="getImage(project.Image.data)" alt="Project Image" class="project-image" />
         <h3>{{ project.name }}</h3>
 
         <p>{{ project.Description }}</p>
         <a :href="project.githublink" target="_blank">GitHub Link</a>
-        <button @click="openEditProjectPopup(project)">Edit</button>
-        <button @click="deleteProject(project._id)">Delete</button>
+        <button v-if="isAuthenticated" @click="openEditProjectPopup(project)">Edit</button>
+        <button v-if="isAuthenticated" @click="deleteProject(project._id)">Delete</button>
 
 
       </li>
@@ -52,6 +52,7 @@
   <script>
 
 import ProjectService from '../services/ProjectsService';
+import AuthService from '../services/AuthService';
 
 export default {
   name: 'ProjectsHome',
@@ -60,6 +61,8 @@ export default {
     projects: [],
     showAddProjectPopup: false,
     showEditProjectPopup: false,
+    isAuthenticated: AuthService.isAdmin(),
+
     newProject: {
       name: '',
       githublink: '',
@@ -116,6 +119,11 @@ methods: {
       } catch (error) {
         console.error('Failed to delete project:', error);
       }
+    },
+     getImage(image) {
+      var url = process.env.VUE_APP_API_URL+"/images/"
+        return url + image;
+      
     },
   async editProjectDetails() {
     const formData = new FormData();

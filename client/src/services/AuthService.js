@@ -1,7 +1,7 @@
 import axios from 'axios';
-
+var url = process.env.VUE_APP_API_URL;
 const apiClient = axios.create({
-  baseURL: 'http://localhost:5000/auth',
+  baseURL: url,
   withCredentials: false,
   headers: {
     Accept: 'application/json',
@@ -9,16 +9,29 @@ const apiClient = axios.create({
   }
 });
 
+console.log(".env url "+process.env.VUE_APP_API_URL);
 
 
 
 
 export default {
+  
+  getResume(resume) {
+    var url2 = url + resume;
+    return url2;
+  },
   register(user) {
-    return apiClient.post('/register', user);
+    return apiClient.post('/auth/register', user);
   },
   login(user) {
-    return apiClient.post('/login', user).then(response => {
+    return apiClient.post('/auth/login', user).then(response => {
+
+      localStorage.setItem('token', response.data.token);
+      if(response.data.isAdmin == true){
+        localStorage.setItem('isAdmin', response.data.isAdmin);
+
+      }
+
       return response;
     });
   },
@@ -27,10 +40,13 @@ export default {
   isAuthenticated() {
     return !!localStorage.getItem('token');
   },
+  isAdmin() {
+    return !!localStorage.getItem('isAdmin');
+  },
   updateUser(user) {
     const token = localStorage.getItem('token');
     console.log(user._id);
-    return apiClient.put(`/users/${user._id}`, user, {
+    return apiClient.put(`/auth/users/${user._id}`, user, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -39,11 +55,13 @@ export default {
   
   logout() {
     localStorage.removeItem('token');
+    localStorage.removeItem('isAdmin');
+
   },
   
   getUsers() {
     const token = localStorage.getItem('token');
-    return apiClient.get('/users', {
+    return apiClient.get('/auth/users', {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -51,7 +69,7 @@ export default {
   },
   uploadResume(formData) {
     const token = localStorage.getItem('token');
-    return apiClient.post('/uploadResume', formData, {
+    return apiClient.post('/auth/uploadResume', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
         Authorization: `Bearer ${token}`

@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const multer = require('multer');
 const path = require('path');
+const { Storage } = require('@google-cloud/storage');
 
 
 
@@ -27,21 +28,34 @@ const upload = multer({ storage: storage });
 
 const secretKey = process.env.JWT_SECRET || 'your_default_secret_key';
 console.log('Secret Key:', secretKey);
+console.log('Mongo uri:', process.env.MONGO_URI);
+console.log('url:', process.env.VUE_APP_API_URL);
 
 
 
 //resume
 // Set up multer for resume uploads
-const resumeStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'public/resumes');
-  },
-  filename: (req, file, cb) => {
-    cb(null, 'resume.pdf'); // Always save the file as resume.pdf
-  }
-});
+// const resumeStorage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, 'public/resumes');
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, 'resume.pdf'); // Always save the file as resume.pdf
+//   }
+// });
 
-const resumeUpload = multer({ storage: resumeStorage });
+// const resumeUpload = multer({ storage: resumeStorage });
+
+
+
+
+
+
+
+
+
+
+
 
 // Middleware to verify token
 const verifyToken = (req, res, next) => {
@@ -71,13 +85,70 @@ const verifyToken = (req, res, next) => {
 
 
 
-router.post('/uploadResume', verifyToken, resumeUpload.single('resume'), (req, res) => {
-  const file = req.file;
-  if (!file) {
+// Create a Google Cloud Storage client
+const storageresume = new Storage();
+const bucket = storageresume.bucket('your-bucket-name'); // Replace with your bucket name
+
+const multerStorage = multer.memoryStorage();
+const uploadresume = multer({ storage: multerStorage });
+
+router.post('/uploadResume', verifyToken, uploadresume.single('resume'), (req, res) => {
+  if (!req.file) {
     return res.status(400).send('No file uploaded.');
   }
-  res.send('Resume uploaded successfully.');
+
+  const blob = bucket.file('resumes/' + Date.now() + path.extname(req.file.originalname));
+  const blobStream = blob.createWriteStream({
+    resumable: false,
+  });
+
+  blobStream.on('error', (err) => {
+    console.error('Blob stream error:', err);
+    res.status(500).json({ message: 'Upload failed' });
+  });
+
+  blobStream.on('finish', () => {
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+    res.status(200).send({ fileUrl: publicUrl });
+  });
+
+  blobStream.end(req.file.buffer);
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// router.post('/uploadResume', verifyToken, resumeUpload.single('resume'), (req, res) => {
+//   const file = req.file;
+//   if (!file) {
+//     return res.status(400).send('No file uploaded.');
+//   }
+//   res.send('Resume uploaded successfully.');
+// });
+
+
+
 
 
 
@@ -92,7 +163,7 @@ router.post('/uploadResume', verifyToken, resumeUpload.single('resume'), (req, r
 
 router.get('/users', verifyToken, async (req, res) => {
     try {
-        const users = await User.find({}, '_id email username');
+        const users = await User.find({}, '_id email username isAdmin');
         res.status(200).json(users);
     } catch (error) {
       console.error('Detailed error:', error);
@@ -120,9 +191,9 @@ router.delete('/deleteExperience/:id', async (req, res) => {
 });
 
 router.put('/editExperience/:id', upload.single('Image'), async (req, res) => {
-  const { name, Description,Company,positionName,startDate,endDate,skills } = req.body;
+  const { name, Description,Company,positionName,startDate,endDate } = req.body;
   const Image = req.file ? { data: req.file.filename, contentType: req.file.mimetype } : null;
-
+  const skills = JSON.parse(req.body.skills);
   try {
     let experience = await Experiences.findById(req.params.id);
     if (!experience) {
@@ -151,8 +222,9 @@ router.put('/editExperience/:id', upload.single('Image'), async (req, res) => {
 
 
 router.post('/addExperience', upload.single('Image'), async (req, res) => {
-  const { name, Description,Company,positionName,startDate,endDate,skills } = req.body;
+  const { name, Description,Company,positionName,startDate,endDate } = req.body;
   console.log(req.file.filename);
+  const skills = JSON.parse(req.body.skills);
   const Image = req.file ? { data: req.file.filename, contentType: req.file.mimetype } : null;
 
   console.log('Received experience addition request:', req.body);
@@ -304,8 +376,8 @@ router.post('/register', async (req, res) => {
         console.log('User already exists');
         return res.status(400).json({ message: 'User already exists' });
       }
-  
-      user = new User({ username, email, password });
+      var isAdmin = false;
+      user = new User({ username, email, password,isAdmin });
       await user.save();
       console.log('User saved:', user);
   
@@ -352,14 +424,18 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    const payload = { user: { id: user.id } };
+    const payload = { user: { id: user.id, isAdmin: user.isAdmin } };
     jwt.sign(payload, secretKey, { expiresIn: '1h' }, (err, token) => {
       if (err) throw err;
-      res.json({ token });
+      res.json({ 
+        token,
+        isAdmin: user.isAdmin // Send isAdmin status to the frontend
+      });
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 module.exports = router;

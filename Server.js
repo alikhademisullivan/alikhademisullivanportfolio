@@ -8,6 +8,21 @@ const path = require('path');
 
 const app = express();
 app.use(express.json());
+
+
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  console.log('Connected to MongoDB');
+}).catch((error) => {
+  console.error('Error connecting to MongoDB:', error.message);
+  process.exit(1); // Exit the process with an error code
+});
+
+
+
+
 app.use(cors({
     origin: 'http://localhost:8080' // Allow requests from your frontend
   }));
@@ -22,12 +37,15 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.log(err));
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
+
 app.use('/auth', authRoutes);
 
-
+// //for build
+app.use(express.static(path.join(__dirname, 'client/dist')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
+});
+// //for build
 
 
 
