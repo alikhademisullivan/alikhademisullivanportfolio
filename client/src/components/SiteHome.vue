@@ -48,6 +48,13 @@
         <p>Participated in Co-op program - Gained 12 months of Software Engineering work experience</p>
         <p>Expected Graduation: 2026</p>
       </section>
+
+      <section class="skills">
+        <h2>Skills</h2>
+        <div class="skills-container">
+          <span v-for="skill in distinctSkills" :key="skill" class="skill-badge">{{ skill }}</span>
+        </div>
+      </section>
     </main>
     <footer>
       <p>© 2024 Ali Khademi Sullivan. All rights reserved.</p>
@@ -57,14 +64,33 @@
 
 <script>
 import AuthService from '../services/AuthService';
+import ExperienceService from '../services/ExperienceService';
 
 export default {
   data() {
     return {
+      experiences: [],
+      distinctSkills: [],
       resumeLink: '#'
     };
   },
   methods: {
+    async fetchExperiences() {
+      try {
+        const response = await ExperienceService.getAllExperiencies();
+        this.experiences = response.data;
+        console.log(this.experiences);
+
+        this.computeDistinctSkills();
+      } catch (error) {
+        console.error('Error fetching experiences:', error);
+      }
+    },
+    computeDistinctSkills() {
+      const allSkills = this.experiences.flatMap(experience => experience.skills);
+      this.distinctSkills = [...new Set(allSkills)];
+      console.log(this.distinctSkills);
+    },
     async fetchResumeLink() {
       const resume = 'resume.pdf'; // Replace with the actual resume identifier
       const url = await this.getResume(resume);
@@ -82,15 +108,60 @@ export default {
       } catch (error) {
         console.error('Failed to get resume:', error);
       }
-    }
+    },
+   
+ 
 
-
+  },
+  async mounted() {
+    await this.fetchExperiences();
   },
   name: 'SiteHome'
 };
 </script>
 
 <style scoped>
+
+
+.skills {
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  .skills h2 {
+    color: #004d40; /* Dark green heading */
+    font-family: 'Arial', sans-serif;
+    font-size: 24px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  .skills-container {
+    display: flex;
+    justify-content: center; /* Center items horizontally */
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .skill-badge {
+    background-color: #e0f7e9; /* Light green background */
+    border: 2px solid #004d40; /* Dark green border */
+    border-radius: 5px;
+    color: #004d40; /* Dark green text */
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+    padding: 5px 10px;
+    transition: transform 0.2s ease-in-out;
+    display: inline-block;
+    text-align: center; /* Center text in badges */
+    width: calc(12.5% - 20px); /* Adjust width to fit 8 items per line, accounting for gap */
+  }
+
+  .skill-badge:hover {
+    transform: scale(1.05); /* Slightly enlarge on hover */
+  }
+
+
 .profile-image {
   width: 150px;
   height: 150px;
