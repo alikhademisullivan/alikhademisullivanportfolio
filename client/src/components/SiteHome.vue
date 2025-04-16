@@ -56,9 +56,7 @@
         </div>
       </section>
     </main>
-    <footer>
-      <p>© 2024 Ali Khademi Sullivan. All rights reserved.</p>
-    </footer>
+    
   </div>
 </template>
 
@@ -234,12 +232,5 @@ main {
   margin: 10px 0;
 }
 
-footer {
-  background-color: #2e7d32;
-  color: white;
-  padding: 10px 0;
-  position: relative; /* Change to relative */
-  width: 100%;
-  bottom: 0;
-}
+
 </style>
