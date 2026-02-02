@@ -58,7 +58,7 @@
         <h2>Featured Projects</h2>
         <div class="projects-grid">
           <div v-for="project in featuredProjects" :key="project._id" class="project-card">
-            <div class="project-image" v-if="project.imageUrl">
+            <div class="project-image" v-if="isValidField(project.imageUrl)">
               <img :src="project.imageUrl" :alt="project.name" />
             </div>
             <div class="project-content">
@@ -68,8 +68,8 @@
                 <span v-for="tech in project.technologies" :key="tech" class="tech-tag">{{ tech }}</span>
               </div>
               <div class="project-links">
-                <a v-if="project.githubLink" :href="project.githubLink" target="_blank" class="link-btn">GitHub</a>
-                <a v-if="project.liveLink" :href="project.liveLink" target="_blank" class="link-btn">Live Demo</a>
+                <a v-if="isValidField(project.githubLink)" :href="project.githubLink" target="_blank" class="link-btn">GitHub</a>
+                <a v-if="isValidField(project.liveLink)" :href="project.liveLink" target="_blank" class="link-btn">Live Demo</a>
               </div>
             </div>
           </div>
@@ -213,6 +213,9 @@ export default {
     },
     formatDate(date) {
       return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+    },
+    isValidField(value) {
+      return value && value !== 'undefined' && value !== null && value !== undefined;
     }
   },
   mounted() {

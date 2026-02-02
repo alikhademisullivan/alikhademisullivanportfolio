@@ -136,7 +136,7 @@ router.post('/uploadResume', verifyToken, uploadresume.single('resume'), (req, r
     res.status(500).json({ message: 'Upload failed' });
   });
 
-  blobStream.on('finish', () => {
+    blobStream.on('finish', async () => {
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
     res.status(200).send({ fileUrl: publicUrl });
   });
@@ -491,7 +491,7 @@ router.put('/editProject/:id', verifyToken, uploadresume.single('Image'), async 
 
 
 
-router.post('/addProject', verifyToken, uploadresume.single('Image'), (req, res) => {
+router.post('/addProject', verifyToken, uploadresume.single('Image'), async (req, res) => {
   const { name, description, longDescription, technologies, githubLink, liveLink, imageUrl, featured, order } = req.body;
 
   // Handle technologies array

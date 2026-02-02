@@ -24,7 +24,12 @@ mongoose.connect(process.env.MONGO_URI, {
 
 
 app.use(cors({
-    origin: 'http://localhost:8082' // Allow requests from your frontend
+    origin: [
+      'http://localhost:8082',
+      'http://localhost:5000',
+      'https://trim-mix-436100-b6.uc.r.appspot.com'
+    ],
+    credentials: true
   }));
 
   app.use('/images', express.static(path.join(__dirname, 'public/images')));
