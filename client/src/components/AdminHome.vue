@@ -1,6 +1,9 @@
 <template>
   <div class="admin-container">
-    <h2>Admin Page</h2>
+    <div class="admin-header">
+      <h2>Admin Panel</h2>
+      <router-link to="/skills" class="skills-link">Manage Skills</router-link>
+    </div>
     <table class="admin-table">
       <thead>
         <tr>
@@ -122,59 +125,74 @@ export default {
 
 <style scoped>
 .admin-container {
-  padding: 20px;
-  background-color: #e0f7e9;
-  border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  background: linear-gradient(135deg, #f9fafb 0%, #eef2ff 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+  max-width: 1200px;
+  margin: 40px auto;
 }
 
 h2 {
-  color: #4caf50;
+  color: #6366f1;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+  font-size: 2rem;
+  font-weight: 700;
 }
+
 h3 {
-  color: #4caf50;
+  color: #6366f1;
   text-align: center;
   margin-bottom: 20px;
+  font-size: 1.3rem;
+  font-weight: 600;
 }
 
 .admin-table {
   width: 100%;
   border-collapse: collapse;
-  margin: 0 auto;
+  margin: 0 auto 40px;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
 }
 
 .admin-table th, .admin-table td {
-  padding: 10px;
-  border: 1px solid #cccccc;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
   text-align: left;
 }
 
 .admin-table th {
-  background-color: #4caf50;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: white;
+  font-weight: 600;
 }
 
 .admin-table tr:nth-child(even) {
-  background-color: #f2f2f2;
+  background-color: #f9fafb;
 }
 
 .admin-table tr:hover {
-  background-color: #d4edda;
+  background-color: #eef2ff;
 }
 
 button {
-  padding: 5px 10px;
-  background-color: #4caf50;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
 }
 
 button:hover {
-  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .modal {
@@ -187,53 +205,113 @@ button:hover {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
 }
 
 .modal-content {
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 300px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+  padding: 40px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+  border: 1px solid #e5e7eb;
+}
+
+.modal-content h2 {
+  font-size: 1.5rem;
+  margin-bottom: 25px;
 }
 
 .close {
   float: right;
-  font-size: 20px;
+  font-size: 28px;
   cursor: pointer;
+  color: #6b7280;
+  transition: color 0.3s ease;
+}
+
+.close:hover {
+  color: #6366f1;
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   text-align: left;
 }
 
 label {
   display: block;
-  margin-bottom: 5px;
-  color: #333333;
+  margin-bottom: 8px;
+  color: #1f2937;
+  font-weight: 600;
 }
 
 input {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #cccccc;
-  border-radius: 5px;
+  padding: 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
   box-sizing: border-box;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+input[type="checkbox"] {
+  width: auto;
+  cursor: pointer;
+  accent-color: #6366f1;
 }
 
 .save-button {
   width: 100%;
-  padding: 10px;
-  background-color: #4caf50;
+  padding: 12px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   color: white;
-  font-size: 16px;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .save-button:hover {
-  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.admin-header h2 {
+  margin: 0;
+  flex: 1;
+}
+
+.skills-link {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.skills-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
 </style>

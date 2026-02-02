@@ -6,6 +6,7 @@
       <router-link class="nav-link" to="/">Home</router-link>
       <router-link class="nav-link" to="/projects">Projects</router-link>
       <router-link class="nav-link" to="/experience">Experience</router-link>
+      <router-link class="nav-link" to="/contact">Contact</router-link>
 
       <router-link v-if="!isAuthenticated" class="nav-link" to="/register">Register</router-link>
       <router-link v-if="!isAuthenticated" class="nav-link" to="/login">Login</router-link>
@@ -44,107 +45,122 @@ export default {
   methods: {
     updateAuthStatus() {
       this.isAuthenticated = AuthService.isAuthenticated();
-      this.isAdmin = AuthService.isAuthenticated();
-
+      this.isAdmin = AuthService.isAdmin();
     }
   }
 };
 </script>
 <style>
-
 body {
   margin: 0;
-  
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9fafb;
+  color: #1f2937;
+}
+</style>
+
+<style scoped>
+/* Color Theme Variables */
+:root {
+  --primary: #6366f1;
+  --secondary: #10b981;
+  --dark: #1f2937;
+  --light: #f9fafb;
+  --accent: #06b6d4;
 }
 
-</style>
-<style scoped>
 .profile-image {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-}
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #e0f7e9;
+  border: 3px solid #fff;
 }
 
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #4caf50;
-  padding: 10px 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  padding: 15px 30px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
 }
 
 .nav-link {
   color: white;
   text-decoration: none;
-  padding: 10px 15px;
-  border-radius: 5px;
-  transition: background-color 0.3s;
+  padding: 10px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  font-size: 15px;
 }
 
 .nav-link:hover {
-  background-color: #45a049;
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .nav-link.active {
-  background-color: #388e3c;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-bottom: 2px solid #fff;
 }
+
 footer {
-  background-color: #2e7d32;
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
   color: white;
-  padding: 10px 0;
-  position: relative; /* Change to relative */
-  width: 100%;
-  bottom: 0;
-  justify-items: center;
+  padding: 30px 0;
+  margin-top: 60px;
+  text-align: center;
 }
+
+footer p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
 nav ul {
   list-style-type: none;
   padding: 0;
-  margin: 10px 0 0 0;
+  margin: 15px 0 0 0;
   display: flex;
   justify-content: center;
-}
-nav ul li {
-  margin: 0 15px;
+  gap: 20px;
 }
 
 nav ul li a {
   color: white;
   text-decoration: none;
-  font-size: 18px;
+  font-size: 20px;
+  transition: all 0.3s ease;
+  opacity: 0.8;
 }
 
 nav ul li a:hover {
-  text-decoration: underline;
+  opacity: 1;
+  transform: scale(1.1);
 }
 </style>
 
-
-
-
-<style >
+<style>
 /* Custom Toastr Styles */
 .toast {
-  background-color: #4caf50 !important; /* Green background */
-  color: #ffffff !important; /* White text */
-  opacity: 1 !important; /* Remove transparency */
+  background-color: #10b981 !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
 }
 
 .toast-success {
-  background-color: #4caf50 !important; /* Green background for success */
+  background-color: #10b981 !important;
 }
 
 .toast-error {
-  background-color: #f44336 !important; /* Red background for error */
+  background-color: #ef4444 !important;
 }
 
 .toast-message {
-  font-size: 16px !important; /* Increase font size */
+  font-size: 15px !important;
+  font-weight: 500 !important;
 }
 </style>

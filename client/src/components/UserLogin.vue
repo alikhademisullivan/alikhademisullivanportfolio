@@ -83,54 +83,69 @@ export default {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #e0f7e9;
+  background: linear-gradient(135deg, #f9fafb 0%, #eef2ff 100%);
 }
 
 .login-box {
-  background-color: #ffffff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  width: 300px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+  width: 350px;
   text-align: center;
+  border: 1px solid #e5e7eb;
 }
 
 h2 {
-  color: #4caf50;
-  margin-bottom: 20px;
+  color: #6366f1;
+  margin-bottom: 30px;
+  font-size: 1.8rem;
+  font-weight: 700;
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   text-align: left;
 }
 
 label {
   display: block;
-  margin-bottom: 5px;
-  color: #333333;
+  margin-bottom: 8px;
+  color: #1f2937;
+  font-weight: 600;
 }
 
 input {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #cccccc;
-  border-radius: 5px;
+  padding: 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
   box-sizing: border-box;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .login-button {
   width: 100%;
-  padding: 10px;
-  background-color: #4caf50;
+  padding: 12px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   color: white;
   font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .login-button:hover {
-  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
 }
 </style>

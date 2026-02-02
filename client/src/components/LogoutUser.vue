@@ -9,7 +9,8 @@
     name: 'LogoutUser',
     created() {
       AuthService.logout();
-      this.$router.push({ name: 'UserLogin' });
+      this.$emit('login-success');
+      this.$router.push({ name: 'SiteHome' });
     }
   }
   </script>

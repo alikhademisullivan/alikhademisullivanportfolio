@@ -373,15 +373,3 @@ main {
   </style>
   
   <style scoped src="../css/popup.css"></style>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  

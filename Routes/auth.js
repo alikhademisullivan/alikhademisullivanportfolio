@@ -3,6 +3,8 @@ const router = express.Router();
 const User = require('../Models/User');
 const Projects = require('../Models/Projects');
 const Experiences = require('../Models/Experiences');
+const Contact = require('../Models/Contact');
+const Skills = require('../Models/Skills');
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -56,6 +58,14 @@ console.log('url:', process.env.VUE_APP_API_URL);
 
 
 
+
+// Helper function to clean up optional string fields
+const cleanOptionalField = (value) => {
+  if (!value || value === 'undefined' || value.trim() === '') {
+    return null;
+  }
+  return value;
+};
 
 // Middleware to verify token
 const verifyToken = (req, res, next) => {
@@ -227,75 +237,74 @@ router.delete('/deleteExperience/:id', async (req, res) => {
 });
 
 router.put('/editExperience/:id', verifyToken, uploadresume.single('Image'), async (req, res) => {
-  const { name, Description, Company, positionName, startDate, endDate } = req.body;
-  const skills = JSON.parse(req.body.skills);
-
-  if (req.file) {
-    const blob = bucket.file('images/' + Date.now() + path.extname(req.file.originalname));
-    const blobStream = blob.createWriteStream({
-      resumable: false,
-    });
-
-    blobStream.on('error', (err) => {
-      console.error('Blob stream error:', err);
-      res.status(500).json({ message: 'Upload failed' });
-    });
-
-    blobStream.on('finish', async () => {
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-      const Image = { data: publicUrl, contentType: req.file.mimetype };
-
-      try {
-        let experience = await Experiences.findById(req.params.id);
-        if (!experience) {
-          return res.status(404).json({ message: 'Experience not found' });
-        }
-        experience.name = name || experience.name;
-        experience.skills = skills || experience.skills;
-        experience.Company = Company || experience.Company;
-        experience.positionName = positionName || experience.positionName;
-        experience.startDate = startDate || experience.startDate;
-        experience.endDate = endDate || experience.endDate;
-        experience.Description = Description || experience.Description;
-        experience.Image = Image;
-
-        await experience.save();
-        res.status(200).json({ message: 'Experience updated successfully', experience });
-      } catch (err) {
-        console.error('Error during experience update:', err);
-        res.status(500).json({ message: err.message });
-      }
-    });
-
-    blobStream.end(req.file.buffer);
-  } else {
+  const { company, position, description, responsibilities, technologies, startDate, endDate, current, logo } = req.body;
+  
+  // Handle technologies array
+  let techArray = [];
+  if (technologies) {
     try {
-      let experience = await Experiences.findById(req.params.id);
-      if (!experience) {
-        return res.status(404).json({ message: 'Experience not found' });
-      }
-      experience.name = name || experience.name;
-      experience.skills = skills || experience.skills;
-      experience.Company = Company || experience.Company;
-      experience.positionName = positionName || experience.positionName;
-      experience.startDate = startDate || experience.startDate;
-      experience.endDate = endDate || experience.endDate;
-      experience.Description = Description || experience.Description;
-
-      await experience.save();
-      res.status(200).json({ message: 'Experience updated successfully', experience });
-    } catch (err) {
-      console.error('Error during experience update:', err);
-      res.status(500).json({ message: err.message });
+      techArray = typeof technologies === 'string' ? JSON.parse(technologies) : technologies;
+    } catch (e) {
+      techArray = [];
     }
+  }
+
+  let responsibilitiesArray = [];
+  if (responsibilities) {
+    try {
+      responsibilitiesArray = typeof responsibilities === 'string' ? JSON.parse(responsibilities) : responsibilities;
+    } catch (e) {
+      responsibilitiesArray = [];
+    }
+  }
+
+  try {
+    let experience = await Experiences.findById(req.params.id);
+    if (!experience) {
+      return res.status(404).json({ message: 'Experience not found' });
+    }
+    
+    experience.company = company || experience.company;
+    experience.position = position || experience.position;
+    experience.description = description || experience.description;
+    experience.technologies = techArray.length > 0 ? techArray : experience.technologies;
+    experience.responsibilities = responsibilitiesArray.length > 0 ? responsibilitiesArray : experience.responsibilities;
+    experience.startDate = startDate || experience.startDate;
+    experience.endDate = endDate || experience.endDate;
+    experience.current = current !== undefined ? current : experience.current;
+    experience.logo = logo || experience.logo;
+
+    await experience.save();
+    res.status(200).json({ message: 'Experience updated successfully', experience });
+  } catch (err) {
+    console.error('Error during experience update:', err);
+    res.status(500).json({ message: err.message });
   }
 });
 
 
 
 router.post('/addExperience', verifyToken, uploadresume.single('Image'), async (req, res) => {
-  const { name, Description, Company, positionName, startDate, endDate } = req.body;
-  const skills = JSON.parse(req.body.skills);
+  const { company, position, description, responsibilities, technologies, startDate, endDate, current, logo } = req.body;
+
+  // Handle technologies array
+  let techArray = [];
+  if (technologies) {
+    try {
+      techArray = typeof technologies === 'string' ? JSON.parse(technologies) : technologies;
+    } catch (e) {
+      techArray = [];
+    }
+  }
+
+  let responsibilitiesArray = [];
+  if (responsibilities) {
+    try {
+      responsibilitiesArray = typeof responsibilities === 'string' ? JSON.parse(responsibilities) : responsibilities;
+    } catch (e) {
+      responsibilitiesArray = [];
+    }
+  }
 
   if (req.file) {
     const blob = bucket.file('images/' + Date.now() + path.extname(req.file.originalname));
@@ -313,12 +322,18 @@ router.post('/addExperience', verifyToken, uploadresume.single('Image'), async (
       const Image = { data: publicUrl, contentType: req.file.mimetype };
 
       try {
-        let experience = await Experiences.findOne({ name });
-        if (experience) {
-          console.log('Experience already exists');
-          return res.status(400).json({ message: 'Experience already exists' });
-        }
-        experience = new Experiences({ name, Description, Company, positionName, startDate, endDate, skills, Image });
+        let experience = new Experiences({ 
+          company, 
+          position, 
+          description, 
+          responsibilities: responsibilitiesArray, 
+          technologies: techArray, 
+          startDate, 
+          endDate, 
+          current: current || false, 
+          logo,
+          Image 
+        });
         await experience.save();
         console.log('Experience saved:', experience);
         res.status(201).json({ message: 'Experience added successfully', experience });
@@ -331,12 +346,17 @@ router.post('/addExperience', verifyToken, uploadresume.single('Image'), async (
     blobStream.end(req.file.buffer);
   } else {
     try {
-      let experiencetest = await Experiences.findOne({ name });
-      if (experiencetest) {
-        console.log('Experience already exists');
-        return res.status(400).json({ message: 'Experience already exists' });
-      }
-      const experience = new Experiences({ name, Description, Company, positionName, startDate, endDate, skills });
+      const experience = new Experiences({ 
+        company, 
+        position, 
+        description, 
+        responsibilities: responsibilitiesArray, 
+        technologies: techArray, 
+        startDate, 
+        endDate, 
+        current: current || false, 
+        logo
+      });
       await experience.save();
       console.log('Experience saved:', experience);
       res.status(201).json({ message: 'Experience added successfully', experience });
@@ -391,9 +411,20 @@ router.delete('/deleteProject/:id', async (req, res) => {
 });
 
 router.put('/editProject/:id', verifyToken, uploadresume.single('Image'), async (req, res) => {
-  const { name, githublink, Description } = req.body;
+  const { name, description, longDescription, technologies, githubLink, liveLink, imageUrl, featured, order } = req.body;
+
+  // Handle technologies array
+  let techArray = [];
+  if (technologies) {
+    try {
+      techArray = typeof technologies === 'string' ? JSON.parse(technologies) : technologies;
+    } catch (e) {
+      techArray = [];
+    }
+  }
 
   if (req.file) {
+    // File upload to Google Cloud Storage
     const blob = bucket.file('images/' + Date.now() + path.extname(req.file.originalname));
     const blobStream = blob.createWriteStream({
       resumable: false,
@@ -406,7 +437,6 @@ router.put('/editProject/:id', verifyToken, uploadresume.single('Image'), async 
 
     blobStream.on('finish', async () => {
       const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-      const Image = { data: publicUrl, contentType: req.file.mimetype };
 
       try {
         let project = await Projects.findById(req.params.id);
@@ -414,9 +444,14 @@ router.put('/editProject/:id', verifyToken, uploadresume.single('Image'), async 
           return res.status(404).json({ message: 'Project not found' });
         }
         project.name = name || project.name;
-        project.githublink = githublink || project.githublink;
-        project.Description = Description || project.Description;
-        project.Image = Image;
+        project.description = description || project.description;
+        project.longDescription = longDescription || project.longDescription;
+        project.technologies = techArray.length > 0 ? techArray : project.technologies;
+        project.githubLink = githubLink || project.githubLink;
+        project.liveLink = liveLink || project.liveLink;
+        project.imageUrl = publicUrl;
+        project.featured = featured !== undefined ? featured : project.featured;
+        project.order = order !== undefined ? order : project.order;
 
         await project.save();
         res.status(200).json({ message: 'Project updated successfully', project });
@@ -428,14 +463,21 @@ router.put('/editProject/:id', verifyToken, uploadresume.single('Image'), async 
 
     blobStream.end(req.file.buffer);
   } else {
+    // No file upload, just update text fields
     try {
       let project = await Projects.findById(req.params.id);
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
       }
       project.name = name || project.name;
-      project.githublink = githublink || project.githublink;
-      project.Description = Description || project.Description;
+      project.description = description || project.description;
+      project.longDescription = longDescription || project.longDescription;
+      project.technologies = techArray.length > 0 ? techArray : project.technologies;
+      project.githubLink = cleanOptionalField(githubLink);
+      project.liveLink = cleanOptionalField(liveLink);
+      project.imageUrl = cleanOptionalField(imageUrl);
+      project.featured = featured !== undefined ? featured : project.featured;
+      project.order = order !== undefined ? order : project.order;
 
       await project.save();
       res.status(200).json({ message: 'Project updated successfully', project });
@@ -450,35 +492,69 @@ router.put('/editProject/:id', verifyToken, uploadresume.single('Image'), async 
 
 
 router.post('/addProject', verifyToken, uploadresume.single('Image'), (req, res) => {
-  const { name, githublink, Description } = req.body;
+  const { name, description, longDescription, technologies, githubLink, liveLink, imageUrl, featured, order } = req.body;
 
-  if (!req.file) {
-    return res.status(400).send('No file uploaded.');
+  // Handle technologies array
+  let techArray = [];
+  if (technologies) {
+    try {
+      techArray = typeof technologies === 'string' ? JSON.parse(technologies) : technologies;
+    } catch (e) {
+      techArray = [];
+    }
   }
 
-  const blob = bucket.file('images/' + Date.now() + path.extname(req.file.originalname));
-  const blobStream = blob.createWriteStream({
-    resumable: false,
-  });
+  // If there's a file, upload it to Google Cloud Storage
+  if (req.file) {
+    const blob = bucket.file('images/' + Date.now() + path.extname(req.file.originalname));
+    const blobStream = blob.createWriteStream({
+      resumable: false,
+    });
 
-  blobStream.on('error', (err) => {
-    console.error('Blob stream error:', err);
-    res.status(500).json({ message: 'Upload failed' });
-  });
+    blobStream.on('error', (err) => {
+      console.error('Blob stream error:', err);
+      res.status(500).json({ message: 'Upload failed' });
+    });
 
-  blobStream.on('finish', async () => {
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+    blobStream.on('finish', async () => {
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
 
-    const Image = { data: publicUrl, contentType: req.file.mimetype };
-    console.log('Received project addition request:', req.body);
-
-    try {
-      let project = await Projects.findOne({ name });
-      if (project) {
-        console.log('Project already exists');
-        return res.status(400).json({ message: 'Project already exists' });
+      try {
+        const project = new Projects({
+          name,
+          description,
+          longDescription,
+          technologies: techArray,
+          githubLink,
+          liveLink,
+          imageUrl: publicUrl,
+          featured: featured || false,
+          order: order || 0
+        });
+        await project.save();
+        console.log('Project saved:', project);
+        res.status(201).json({ message: 'Project added successfully', project });
+      } catch (err) {
+        console.error('Error during project addition:', err);
+        res.status(500).json({ message: err.message });
       }
-      project = new Projects({ name, githublink, Description, Image });
+    });
+
+    blobStream.end(req.file.buffer);
+  } else {
+    // No file uploaded, just create project with imageUrl if provided
+    try {
+      const project = new Projects({
+        name,
+        description,
+        longDescription,
+        technologies: techArray,
+        githubLink: cleanOptionalField(githubLink),
+        liveLink: cleanOptionalField(liveLink),
+        imageUrl: cleanOptionalField(imageUrl),
+        featured: featured || false,
+        order: order || 0
+      });
       await project.save();
       console.log('Project saved:', project);
       res.status(201).json({ message: 'Project added successfully', project });
@@ -486,9 +562,7 @@ router.post('/addProject', verifyToken, uploadresume.single('Image'), (req, res)
       console.error('Error during project addition:', err);
       res.status(500).json({ message: err.message });
     }
-  });
-
-  blobStream.end(req.file.buffer);
+  }
 });
 
 
@@ -616,5 +690,129 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Contact form endpoints
+router.post('/contact', async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    const contact = new Contact({
+      name,
+      email,
+      subject,
+      message
+    });
+
+    await contact.save();
+    res.status(201).json({ message: 'Message sent successfully', contact });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get('/contacts', verifyToken, async (req, res) => {
+  try {
+    const contacts = await Contact.find().sort({ createdAt: -1 });
+    res.json(contacts);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.put('/contacts/:id/read', verifyToken, async (req, res) => {
+  try {
+    const contact = await Contact.findByIdAndUpdate(
+      req.params.id,
+      { read: true },
+      { new: true }
+    );
+    if (!contact) {
+      return res.status(404).json({ message: 'Contact not found' });
+    }
+    res.json(contact);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.delete('/contacts/:id', verifyToken, async (req, res) => {
+  try {
+    const contact = await Contact.findByIdAndDelete(req.params.id);
+    if (!contact) {
+      return res.status(404).json({ message: 'Contact not found' });
+    }
+    res.json({ message: 'Contact deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Skills Routes
+router.get('/getAllSkills', async (req, res) => {
+  try {
+    const skills = await Skills.find().sort({ order: 1 });
+    res.status(200).json(skills);
+  } catch (err) {
+    console.error('Error fetching skills:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/addSkill', verifyToken, async (req, res) => {
+  const { category, skills } = req.body;
+
+  if (!category || !skills || !Array.isArray(skills)) {
+    return res.status(400).json({ message: 'Category and skills array are required' });
+  }
+
+  try {
+    const skill = new Skills({
+      category,
+      skills,
+      order: await Skills.countDocuments()
+    });
+    await skill.save();
+    res.status(201).json({ message: 'Skill category added successfully', skill });
+  } catch (err) {
+    console.error('Error adding skill:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.put('/editSkill/:id', verifyToken, async (req, res) => {
+  const { category, skills } = req.body;
+
+  try {
+    let skill = await Skills.findById(req.params.id);
+    if (!skill) {
+      return res.status(404).json({ message: 'Skill category not found' });
+    }
+
+    skill.category = category || skill.category;
+    skill.skills = skills || skill.skills;
+
+    await skill.save();
+    res.status(200).json({ message: 'Skill category updated successfully', skill });
+  } catch (err) {
+    console.error('Error updating skill:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.delete('/deleteSkill/:id', verifyToken, async (req, res) => {
+  try {
+    const skill = await Skills.findByIdAndDelete(req.params.id);
+    if (!skill) {
+      return res.status(404).json({ message: 'Skill category not found' });
+    }
+    res.status(200).json({ message: 'Skill category deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting skill:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
 
 module.exports = router;

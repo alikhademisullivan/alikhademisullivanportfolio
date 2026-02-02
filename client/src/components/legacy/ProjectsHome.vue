@@ -246,12 +246,3 @@ button:hover {
 
 
 <style scoped src="../css/popup.css"></style>
-
-
-
-
-
-
-
-
-

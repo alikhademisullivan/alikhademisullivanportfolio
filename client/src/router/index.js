@@ -1,11 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Home from '../components/SiteHome.vue';
+import Home from '../components/SiteHome_new.vue';
 import UserLogin from '../components/UserLogin.vue';
 import UserRegister from '../components/UserRegister.vue';
 import Admin from '@/components/AdminHome.vue';
-import ProjectsHome from '../components/ProjectsHome.vue';
-import ExperienceHome from '../components/ExperienceHome.vue';
-import LogoutUser from '../components/LogoutUser.vue'; // Import the Logout component
+import ProjectsHome from '../components/ProjectsHome_new.vue';
+import ExperienceHome from '../components/ExperienceHome_new.vue';
+import Contact from '../components/Contact_new.vue';
+import LogoutUser from '../components/LogoutUser.vue';
+import SkillsHome from '../components/SkillsHome.vue';
 
 import AuthService from '../services/AuthService';
 
@@ -38,6 +40,11 @@ const routes = [
     component: ExperienceHome
   },
   {
+    path: '/contact',
+    name: 'Contact',
+    component: Contact
+  },
+  {
     path: '/logout',
     name: 'LogoutUser',
     component: LogoutUser
@@ -47,6 +54,18 @@ const routes = [
     component: Admin,
     name: 'Admin',
 
+    beforeEnter: (to, from, next) => {
+      if (AuthService.isAdmin()) {
+        next();
+      } else {
+        next('/login');
+      }
+    }
+  },
+  {
+    path: '/skills',
+    name: 'SkillsHome',
+    component: SkillsHome,
     beforeEnter: (to, from, next) => {
       if (AuthService.isAdmin()) {
         next();

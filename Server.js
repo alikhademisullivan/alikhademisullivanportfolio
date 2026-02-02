@@ -24,7 +24,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
 
 app.use(cors({
-    origin: 'http://localhost:8080' // Allow requests from your frontend
+    origin: 'http://localhost:8082' // Allow requests from your frontend
   }));
 
   app.use('/images', express.static(path.join(__dirname, 'public/images')));

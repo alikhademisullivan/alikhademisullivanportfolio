@@ -1,37 +1,49 @@
 const mongoose = require('mongoose');
 
 const ExperiencesSchema = new mongoose.Schema({
-    name: {
-      type: String,
-      required: true,
-      unique: true
-    },
-    Description: {
-      type: String,
-    },
-    Image: {
-      data: String,
-      contentType: String
-    },
-    skills: {
-      type: [String], // Array of strings to store multiple skills
-    },
-    startDate: {
-      type: Date,
-      required: true
-    },
-    endDate: {
-      type: Date,
-    },
-    Company: {
-      type: String,
-      required: true
-    },
-    positionName: {
-      type: String,
-      required: true
-    }
-  });
+  company: {
+    type: String,
+    required: true
+  },
+  position: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  responsibilities: {
+    type: [String],
+    default: []
+  },
+  technologies: {
+    type: [String],
+    default: []
+  },
+  startDate: {
+    type: Date,
+    required: true
+  },
+  endDate: {
+    type: Date,
+  },
+  current: {
+    type: Boolean,
+    default: false
+  },
+  logo: {
+    type: String,
+  },
+  order: {
+    type: Number,
+    default: 0
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
 
 
 

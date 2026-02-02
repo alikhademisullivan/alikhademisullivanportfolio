@@ -10,6 +10,9 @@ const apiClient = axios.create({
 });
 
 export default {
+    getAllExperiences() {
+      return apiClient.get('/auth/getAllExperiences');
+    },
     getAllExperiencies() {
       return apiClient.get('/auth/getAllExperiences');
     },

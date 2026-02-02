@@ -82,62 +82,73 @@ export default {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #f0f4f8;
+  background: linear-gradient(135deg, #f9fafb 0%, #eef2ff 100%);
 }
 
 h2 {
-  color: #2c3e50;
-  margin-bottom: 20px;
+  color: #6366f1;
+  margin-bottom: 30px;
+  font-size: 2rem;
+  font-weight: 700;
 }
 
 form {
-  background-color: #ffffff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
   width: 100%;
-  max-width: 400px;
+  max-width: 450px;
+  border: 1px solid #e5e7eb;
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 label {
   display: block;
-  margin-bottom: 5px;
-  color: #2c3e50;
+  margin-bottom: 8px;
+  color: #1f2937;
+  font-weight: 600;
 }
 
 input[type="text"],
 input[type="email"],
 input[type="password"] {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
   box-sizing: border-box;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
 input[type="text"]:focus,
 input[type="email"]:focus,
 input[type="password"]:focus {
-  border-color: #4caf50;
   outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .register-button {
-  background-color: #4caf50;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: #ffffff;
-  padding: 10px 15px;
+  padding: 12px 15px;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   width: 100%;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
 }
 
 .register-button:hover {
-  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
 }
 </style>
 
