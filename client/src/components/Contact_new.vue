@@ -103,7 +103,7 @@
               <i class="fas fa-map-marker-alt"></i>
               <div>
                 <h3>Location</h3>
-                <p>London, Ontario, Canada</p>
+                <p>Ontario, Canada</p>
               </div>
             </div>
           </div>

@@ -140,8 +140,8 @@ export default {
         const response = await ProjectService.getAllProjects();
         this.projects = response.data.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
       } catch (error) {
-        console.error('Error fetching projects:', error);
-        alert('Failed to load projects');
+        console.error('Error fetching projects:', error?.response?.data || error);
+        alert(`Failed to load projects: ${this.getErrorMessage(error)}`);
       }
     },
     async addProject() {
@@ -156,25 +156,20 @@ export default {
         formData.append('imageUrl', this.newProject.imageUrl || '');
         formData.append('featured', this.newProject.featured);
 
-        let response;
         if (this.newProject._id) {
-          response = await ProjectService.editProject(this.newProject._id, formData);
-          const index = this.projects.findIndex(p => p._id === this.newProject._id);
-          if (index !== -1) {
-            this.projects[index] = response.data.project || response.data;
-          }
+          await ProjectService.editProject(this.newProject._id, formData);
           alert('Project updated successfully!');
         } else {
-          response = await ProjectService.addProject(formData);
-          this.projects.push(response.data.project || response.data);
+          await ProjectService.addProject(formData);
           alert('Project added successfully!');
         }
-        
+
+        await this.fetchProjects();
         this.resetForm();
         this.showAddForm = false;
       } catch (error) {
-        console.error('Error adding/editing project:', error);
-        alert('Failed to add/edit project');
+        console.error('Error adding/editing project:', error?.response?.data || error);
+        alert(`Failed to add/edit project: ${this.getErrorMessage(error)}`);
       }
     },
     async deleteProject(projectId) {
@@ -185,8 +180,8 @@ export default {
         this.projects = this.projects.filter(p => p._id !== projectId);
         alert('Project deleted successfully!');
       } catch (error) {
-        console.error('Error deleting project:', error);
-        alert('Failed to delete project');
+        console.error('Error deleting project:', error?.response?.data || error);
+        alert(`Failed to delete project: ${this.getErrorMessage(error)}`);
       }
     },
     editProject(project) {
@@ -207,6 +202,19 @@ export default {
         featured: false,
         order: 0
       };
+    },
+    getErrorMessage(error) {
+      if (error?.response) {
+        const status = error.response.status;
+        const statusText = error.response.statusText || 'Request failed';
+        const data = error.response.data || {};
+        const message = data.message || data.error || data.msg;
+        return message ? `${status}: ${message}` : `${status}: ${statusText}`;
+      }
+      if (error?.message) {
+        return error.message;
+      }
+      return 'Unknown error';
     }
   },
   mounted() {

@@ -2,7 +2,7 @@
   <div class="home-container">
     <header>
       <h1>Ali Khademi Sullivan</h1>
-      <p>London Ontario, Canada</p>
+      <p>Ontario, Canada</p>
       <p>Student at the University of Western Ontario </p>
 
       <nav>

@@ -45,7 +45,4 @@ const ExperiencesSchema = new mongoose.Schema({
   }
 });
 
-
-
-
 module.exports = mongoose.model('Experience', ExperiencesSchema);

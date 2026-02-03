@@ -17,7 +17,7 @@
 
         <!-- Add Experience Form -->
         <div v-if="showAddForm && isAdmin" class="form-container">
-          <h2>Add Experience</h2>
+          <h2>{{ newExperience._id ? 'Edit Experience' : 'Add Experience' }}</h2>
           <form @submit.prevent="addExperience" class="experience-form">
             <div class="form-group">
               <label>Company Name</label>
@@ -53,7 +53,9 @@
               <label>Logo URL</label>
               <input v-model="newExperience.logo" type="url" />
             </div>
-            <button type="submit" class="btn btn-primary">Add Experience</button>
+            <button type="submit" class="btn btn-primary">
+              {{ newExperience._id ? 'Update Experience' : 'Add Experience' }}
+            </button>
           </form>
         </div>
 
@@ -134,31 +136,41 @@ export default {
         const response = await ExperienceService.getAllExperiences();
         this.experiences = response.data.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
       } catch (error) {
-        console.error('Error fetching experiences:', error);
-        alert('Failed to load experiences');
+        console.error('Error fetching experiences:', error?.response?.data || error);
+        alert(`Failed to load experiences: ${this.getErrorMessage(error)}`);
       }
     },
     async addExperience() {
       try {
-        const expData = {
-          company: this.newExperience.company,
-          position: this.newExperience.position,
-          description: this.newExperience.description,
-          technologies: this.newExperience.technologiesInput.split(',').map(t => t.trim()),
-          startDate: this.newExperience.startDate,
-          endDate: this.newExperience.endDate,
-          current: this.newExperience.current,
-          logo: this.newExperience.logo
-        };
+        const technologies = this.newExperience.technologiesInput
+          .split(',')
+          .map(t => t.trim())
+          .filter(t => t);
 
-        const response = await ExperienceService.addExperience(expData);
-        this.experiences.unshift(response.data);
+        const formData = new FormData();
+        formData.append('company', this.newExperience.company || '');
+        formData.append('position', this.newExperience.position || '');
+        formData.append('description', this.newExperience.description || '');
+        formData.append('technologies', JSON.stringify(technologies));
+        formData.append('startDate', this.newExperience.startDate || '');
+        formData.append('endDate', this.newExperience.endDate || '');
+        formData.append('current', this.newExperience.current);
+        formData.append('logo', this.newExperience.logo || '');
+
+        if (this.newExperience._id) {
+          await ExperienceService.editExperience(this.newExperience._id, formData);
+          alert('Experience updated successfully!');
+        } else {
+          await ExperienceService.addExperience(formData);
+          alert('Experience added successfully!');
+        }
+
+        await this.fetchExperiences();
         this.resetForm();
         this.showAddForm = false;
-        alert('Experience added successfully!');
       } catch (error) {
-        console.error('Error adding experience:', error);
-        alert('Failed to add experience');
+        console.error('Error adding/editing experience:', error?.response?.data || error);
+        alert(`Failed to add/edit experience: ${this.getErrorMessage(error)}`);
       }
     },
     async deleteExperience(expId) {
@@ -169,13 +181,15 @@ export default {
         this.experiences = this.experiences.filter(e => e._id !== expId);
         alert('Experience deleted successfully!');
       } catch (error) {
-        console.error('Error deleting experience:', error);
-        alert('Failed to delete experience');
+        console.error('Error deleting experience:', error?.response?.data || error);
+        alert(`Failed to delete experience: ${this.getErrorMessage(error)}`);
       }
     },
     editExperience(exp) {
       this.newExperience = { 
-        ...exp, 
+        ...exp,
+        startDate: this.formatDateInput(exp.startDate),
+        endDate: this.formatDateInput(exp.endDate),
         technologiesInput: exp.technologies ? exp.technologies.join(', ') : ''
       };
       this.showAddForm = true;
@@ -183,6 +197,25 @@ export default {
     },
     formatDate(date) {
       return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+    },
+    formatDateInput(date) {
+      if (!date) return '';
+      const parsed = new Date(date);
+      if (Number.isNaN(parsed.getTime())) return '';
+      return parsed.toISOString().split('T')[0];
+    },
+    getErrorMessage(error) {
+      if (error?.response) {
+        const status = error.response.status;
+        const statusText = error.response.statusText || 'Request failed';
+        const data = error.response.data || {};
+        const message = data.message || data.error || data.msg;
+        return message ? `${status}: ${message}` : `${status}: ${statusText}`;
+      }
+      if (error?.message) {
+        return error.message;
+      }
+      return 'Unknown error';
     },
     resetForm() {
       this.newExperience = {

@@ -5,7 +5,7 @@
       <div class="hero-content">
         <h1>Ali Khademi Sullivan</h1>
         <p class="tagline">Software Engineering Student & Full Stack Developer</p>
-        <p class="location">London, Ontario, Canada</p>
+        <p class="location">Ontario, Canada</p>
         <div class="cta-buttons">
           <router-link to="/projects" class="btn btn-primary">View My Work</router-link>
           <a href="#contact" class="btn btn-secondary">Get In Touch</a>

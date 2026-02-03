@@ -9,12 +9,31 @@ const path = require('path');
 const app = express();
 app.use(express.json());
 
-
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI).then(async () => {
   console.log('Connected to MongoDB');
+  
+  // Clean up any stale indexes from old schema versions
+  try {
+    const db = mongoose.connection.db;
+    // Try both collection names
+    const collectionNames = ['experiences', 'Users.experiences'];
+    for (const collName of collectionNames) {
+      try {
+        const collection = db.collection(collName);
+        const indexes = await collection.getIndexes();
+        console.log(`Indexes in ${collName}:`, Object.keys(indexes));
+        if (indexes.name_1) {
+          await collection.dropIndex('name_1');
+          console.log(`✓ Dropped stale name_1 index from ${collName} collection`);
+        }
+      } catch (innerError) {
+        // Collection might not exist, continue
+      }
+    }
+  } catch (error) {
+    console.log('Error checking indexes:', error.message);
+  }
 }).catch((error) => {
   console.error('Error connecting to MongoDB:', error.message);
   process.exit(1); // Exit the process with an error code
@@ -25,6 +44,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
 app.use(cors({
     origin: [
+      'http://localhost:8081',
       'http://localhost:8082',
       'http://localhost:5000',
       'https://trim-mix-436100-b6.uc.r.appspot.com'
@@ -38,11 +58,6 @@ app.use(cors({
 
   console.log(__dirname);
    
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.log(err));
-
-
 app.use('/auth', authRoutes);
 
 // //for build
