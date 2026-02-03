@@ -138,7 +138,11 @@ export default {
     async fetchProjects() {
       try {
         const response = await ProjectService.getAllProjects();
-        this.projects = response.data.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+        const data = Array.isArray(response.data) ? response.data : response.data?.projects;
+        if (!Array.isArray(data)) {
+          throw new Error('Projects API did not return an array');
+        }
+        this.projects = data.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
       } catch (error) {
         console.error('Error fetching projects:', error?.response?.data || error);
         alert(`Failed to load projects: ${this.getErrorMessage(error)}`);

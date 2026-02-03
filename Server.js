@@ -42,15 +42,25 @@ mongoose.connect(process.env.MONGO_URI).then(async () => {
 
 
 
+const defaultOrigins = [
+  'http://localhost:8081',
+  'http://localhost:8082',
+  'http://localhost:5000',
+  'https://trim-mix-436100-b6.uc.r.appspot.com',
+  'https://alikhs.com',
+  'https://www.alikhs.com'
+  
+];
+const envOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const clientOrigin = (process.env.CLIENT_URL || process.env.VUE_APP_API_URL || '').trim();
+
 app.use(cors({
-    origin: [
-      'http://localhost:8081',
-      'http://localhost:8082',
-      'http://localhost:5000',
-      'https://trim-mix-436100-b6.uc.r.appspot.com'
-    ],
-    credentials: true
-  }));
+  origin: [...new Set([...defaultOrigins, ...envOrigins, ...(clientOrigin ? [clientOrigin] : [])])],
+  credentials: true
+}));
 
   app.use('/images', express.static(path.join(__dirname, 'public/images')));
 

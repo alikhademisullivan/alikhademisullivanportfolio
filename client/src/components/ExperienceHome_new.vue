@@ -134,7 +134,11 @@ export default {
     async fetchExperiences() {
       try {
         const response = await ExperienceService.getAllExperiences();
-        this.experiences = response.data.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+        const data = Array.isArray(response.data) ? response.data : response.data?.experiences;
+        if (!Array.isArray(data)) {
+          throw new Error('Experiences API did not return an array');
+        }
+        this.experiences = data.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
       } catch (error) {
         console.error('Error fetching experiences:', error?.response?.data || error);
         alert(`Failed to load experiences: ${this.getErrorMessage(error)}`);
