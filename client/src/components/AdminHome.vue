@@ -26,11 +26,30 @@
         </tr>
       </tbody>
     </table>
-    <form @submit.prevent="uploadResume">
-      <h3>Upload Resume</h3>
-      <input style="margin-bottom: 20px;" type="file" @change="handleFileUpload" />
-      <button  type="submit">Upload Resume</button>
-    </form>
+    <div class="upload-section">
+      <div class="upload-card">
+        <h3>Profile Photo</h3>
+        <div v-if="photoPreview" class="photo-preview">
+          <img :src="photoPreview" alt="Profile preview" />
+        </div>
+        <p class="upload-hint">Displays in the hero section of your homepage</p>
+        <form @submit.prevent="uploadProfilePhoto">
+          <input type="file" accept="image/*" @change="handlePhotoUpload" />
+          <button type="submit" :disabled="!photoFile">Upload Photo</button>
+        </form>
+        <p v-if="photoMessage" class="upload-message" :class="photoSuccess ? 'success' : 'error'">{{ photoMessage }}</p>
+      </div>
+
+      <div class="upload-card">
+        <h3>Resume (PDF)</h3>
+        <p class="upload-hint">Displays as "View Resume" button in the hero section</p>
+        <form @submit.prevent="uploadResume">
+          <input type="file" accept=".pdf" @change="handleFileUpload" />
+          <button type="submit" :disabled="!resumeFile">Upload Resume</button>
+        </form>
+        <p v-if="resumeMessage" class="upload-message" :class="resumeSuccess ? 'success' : 'error'">{{ resumeMessage }}</p>
+      </div>
+    </div>
 
     <div v-if="showModal" class="modal">
       <div class="modal-content">
@@ -69,8 +88,13 @@ export default {
         email: '',
         username: '',
       },
-      resumeFile: null
-
+      resumeFile: null,
+      resumeMessage: '',
+      resumeSuccess: false,
+      photoFile: null,
+      photoPreview: null,
+      photoMessage: '',
+      photoSuccess: false
     };
   },
   async created() {
@@ -105,17 +129,37 @@ export default {
       this.resumeFile = event.target.files[0];
     },
     async uploadResume() {
-      if (!this.resumeFile) {
-        alert('Please select a file.');
-        return;
-      }
+      if (!this.resumeFile) return;
       const formData = new FormData();
       formData.append('resume', this.resumeFile);
       try {
-        const response = await AuthService.uploadResume(formData);
-        alert(response.data);
-      } catch (error) {
-        alert('Error uploading file.');
+        await AuthService.uploadResume(formData);
+        this.resumeSuccess = true;
+        this.resumeMessage = 'Resume uploaded successfully!';
+        this.resumeFile = null;
+      } catch {
+        this.resumeSuccess = false;
+        this.resumeMessage = 'Upload failed. Please try again.';
+      }
+    },
+    handlePhotoUpload(event) {
+      this.photoFile = event.target.files[0];
+      if (this.photoFile) {
+        this.photoPreview = URL.createObjectURL(this.photoFile);
+      }
+    },
+    async uploadProfilePhoto() {
+      if (!this.photoFile) return;
+      const formData = new FormData();
+      formData.append('photo', this.photoFile);
+      try {
+        await AuthService.uploadProfilePhoto(formData);
+        this.photoSuccess = true;
+        this.photoMessage = 'Profile photo uploaded successfully!';
+        this.photoFile = null;
+      } catch {
+        this.photoSuccess = false;
+        this.photoMessage = 'Upload failed. Please try again.';
       }
     }
   },
@@ -313,5 +357,66 @@ input[type="checkbox"] {
 .skills-link:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.upload-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.upload-card {
+  background: white;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.upload-card h3 {
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.upload-hint {
+  color: #6b7280;
+  font-size: 0.88rem;
+  margin-bottom: 16px;
+}
+
+.photo-preview {
+  margin-bottom: 16px;
+}
+
+.photo-preview img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #6366f1;
+  display: block;
+}
+
+.upload-card input[type="file"] {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  border: none;
+  padding: 0;
+  width: auto;
+}
+
+.upload-message {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.upload-message.success { color: #10b981; }
+.upload-message.error { color: #ef4444; }
+
+@media (max-width: 768px) {
+  .upload-section { grid-template-columns: 1fr; }
 }
 </style>

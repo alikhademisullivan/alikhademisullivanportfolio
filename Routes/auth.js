@@ -7,6 +7,7 @@ const Contact = require('../Models/Contact');
 const Skills = require('../Models/Skills');
 const Resume = require('../Models/Resume');
 const StoredImage = require('../Models/StoredImage');
+const ProfilePhoto = require('../Models/ProfilePhoto');
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -68,6 +69,36 @@ router.get('/resume', async (req, res) => {
     res.set('Content-Type', resume.contentType);
     res.set('Content-Disposition', `inline; filename="${resume.filename}"`);
     res.send(resume.data);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ─── Profile Photo ────────────────────────────────────────────────────────────
+
+router.post('/uploadProfilePhoto', verifyToken, memoryUpload.single('photo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No file uploaded.' });
+  try {
+    await ProfilePhoto.deleteMany({});
+    const photo = new ProfilePhoto({
+      data: req.file.buffer,
+      contentType: req.file.mimetype,
+      filename: req.file.originalname
+    });
+    await photo.save();
+    res.status(200).json({ message: 'Profile photo uploaded successfully', url: '/auth/profilePhoto' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get('/profilePhoto', async (req, res) => {
+  try {
+    const photo = await ProfilePhoto.findOne();
+    if (!photo) return res.status(404).json({ message: 'No profile photo found' });
+    res.set('Content-Type', photo.contentType);
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(photo.data);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

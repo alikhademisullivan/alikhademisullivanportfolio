@@ -14,6 +14,20 @@ export default {
     return `${process.env.VUE_APP_API_URL}/auth/resume`;
   },
 
+  getProfilePhotoUrl() {
+    return `${process.env.VUE_APP_API_URL}/auth/profilePhoto`;
+  },
+
+  uploadProfilePhoto(formData) {
+    const token = localStorage.getItem('token');
+    return apiClient.post('/auth/uploadProfilePhoto', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        Authorization: `Bearer ${token}`
+      }
+    });
+  },
+
   register(user) {
     return apiClient.post('/auth/register', user);
   },
