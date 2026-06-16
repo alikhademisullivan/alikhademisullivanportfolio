@@ -35,6 +35,9 @@ const ExperiencesSchema = new mongoose.Schema({
   logo: {
     type: String,
   },
+  imageUrl: {
+    type: String,
+  },
   order: {
     type: Number,
     default: 0
