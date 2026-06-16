@@ -9,6 +9,7 @@ import Contact from '../components/Contact.vue';
 import LogoutUser from '../components/LogoutUser.vue';
 import SkillsHome from '../components/SkillsHome.vue';
 import NotFound from '../components/NotFound.vue';
+import SpecialMessage from '../components/extras/SpecialMessage.vue';
 import AuthService from '../services/AuthService';
 
 const routes = [
@@ -35,6 +36,7 @@ const routes = [
       AuthService.isAdmin() ? next() : next('/login');
     }
   },
+  { path: '/nadene', name: 'SpecialMessage', component: SpecialMessage },
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound }
 ];
 
