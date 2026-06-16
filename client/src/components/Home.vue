@@ -3,6 +3,9 @@
     <!-- Hero Section -->
     <section class="hero">
       <div class="hero-content">
+        <div v-if="profilePhotoUrl" class="profile-photo-wrapper">
+          <img :src="profilePhotoUrl" alt="Ali Khademi Sullivan" class="profile-photo" />
+        </div>
         <div class="availability-badge">
           <span class="badge-dot"></span>
           Open to Opportunities
@@ -203,7 +206,8 @@ export default {
       loadingProjects: true,
       loadingExperiences: true,
       loadingSkills: true,
-      resumeUrl: null
+      resumeUrl: null,
+      profilePhotoUrl: null
     };
   },
   computed: {
@@ -275,6 +279,7 @@ export default {
     this.fetchExperiences();
     this.fetchSkills();
     this.resumeUrl = AuthService.getResumeUrl();
+    this.profilePhotoUrl = AuthService.getProfilePhotoUrl();
   }
 };
 </script>
@@ -299,6 +304,19 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.profile-photo-wrapper {
+  margin-bottom: 24px;
+}
+
+.profile-photo {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid rgba(255,255,255,0.9);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
 }
 
 .availability-badge {
