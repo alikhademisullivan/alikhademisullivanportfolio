@@ -193,7 +193,7 @@ import SkillsService from '../services/SkillsService';
 import AuthService from '../services/AuthService';
 
 export default {
-  name: 'Home',
+  name: 'SiteHome',
   data() {
     return {
       projects: [],
