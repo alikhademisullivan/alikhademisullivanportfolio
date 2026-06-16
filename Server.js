@@ -5,6 +5,10 @@ const cors = require('cors'); // Import the cors package
 
 require('dotenv').config();
 const path = require('path');
+const fs = require('fs');
+
+fs.mkdirSync(path.join(__dirname, 'public/images'), { recursive: true });
+fs.mkdirSync(path.join(__dirname, 'public/resumes'), { recursive: true });
 
 const app = express();
 app.use(express.json());

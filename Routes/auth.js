@@ -11,11 +11,8 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const multer = require('multer');
 const path = require('path');
-const { Storage } = require('@google-cloud/storage');
 
-
-
-// Set up multer for file uploads
+// Set up multer for image uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'public/images');
@@ -26,6 +23,18 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
+
+// Set up multer for resume uploads
+const resumeStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'public/resumes');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const uploadResume = multer({ storage: resumeStorage });
 
 
 const secretKey = process.env.JWT_SECRET || 'your_default_secret_key';
@@ -95,53 +104,12 @@ const verifyToken = (req, res, next) => {
 
 
 
-// Create a Google Cloud Storage client
-const bucketstorage = new Storage();
-
-const bucketName = 'resumebucketalikhademi'; // Replace with your bucket name
-const bucket = bucketstorage.bucket(bucketName); // Replace with your bucket name
-
-const multerStorage = multer.memoryStorage();
-const uploadresume = multer({ storage: multerStorage });
-
-async function makeBucketPublic() {
-  await bucket.iam.setPolicy({
-    bindings: [
-      {
-        role: 'roles/storage.objectViewer',
-        members: [
-          'allUsers'
-        ]
-      }
-    ]
-  });
-  console.log(`Bucket ${bucketName} is now publicly accessible.`);
-}
-
-makeBucketPublic().catch(console.error);
-
-
-router.post('/uploadResume', verifyToken, uploadresume.single('resume'), (req, res) => {
+router.post('/uploadResume', verifyToken, uploadResume.single('resume'), (req, res) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
   }
-
-  const blob = bucket.file('resumes/' + Date.now() + path.extname(req.file.originalname));
-  const blobStream = blob.createWriteStream({
-    resumable: false,
-  });
-
-  blobStream.on('error', (err) => {
-    console.error('Blob stream error:', err);
-    res.status(500).json({ message: 'Upload failed' });
-  });
-
-    blobStream.on('finish', async () => {
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-    res.status(200).send({ fileUrl: publicUrl });
-  });
-
-  blobStream.end(req.file.buffer);
+  const fileUrl = `/resumes/${req.file.filename}`;
+  res.status(200).send({ fileUrl });
 });
 
 
@@ -153,22 +121,12 @@ router.post('/uploadResume', verifyToken, uploadresume.single('resume'), (req, r
 
 router.get('/resumes/:filename', (req, res) => {
   const { filename } = req.params;
-  const publicUrl = `https://storage.googleapis.com/${bucket.name}/resumes/${filename}`;
-  res.redirect(publicUrl);
+  res.redirect(`/resumes/${filename}`);
 });
 
-router.get('/image/:filename', async (req, res) => {
+router.get('/image/:filename', (req, res) => {
   const { filename } = req.params;
-  const file = bucket.file(`images/${filename}`);
-
-  try {
-    await file.exists();
-    const publicUrl = `https://storage.googleapis.com/${bucketName}/images/${filename}`;
-    res.status(200).json({ url: publicUrl });
-  } catch (error) {
-    console.error('Error fetching image URL:', error);
-    res.status(500).json({ message: 'Failed to retrieve image URL' });
-  }
+  res.status(200).json({ url: `/images/${filename}` });
 });
 
 
@@ -236,7 +194,7 @@ router.delete('/deleteExperience/:id', async (req, res) => {
   }
 });
 
-router.put('/editExperience/:id', verifyToken, uploadresume.single('Image'), async (req, res) => {
+router.put('/editExperience/:id', verifyToken, upload.single('Image'), async (req, res) => {
   const { company, position, description, responsibilities, technologies, startDate, endDate, current, logo } = req.body;
   
   // Handle technologies array
@@ -284,7 +242,7 @@ router.put('/editExperience/:id', verifyToken, uploadresume.single('Image'), asy
 
 
 
-router.post('/addExperience', verifyToken, uploadresume.single('Image'), async (req, res) => {
+router.post('/addExperience', verifyToken, upload.single('Image'), async (req, res) => {
   const { company, position, description, responsibilities, technologies, startDate, endDate, current, logo } = req.body;
 
   // Handle technologies array
@@ -307,43 +265,28 @@ router.post('/addExperience', verifyToken, uploadresume.single('Image'), async (
   }
 
   if (req.file) {
-    const blob = bucket.file('images/' + Date.now() + path.extname(req.file.originalname));
-    const blobStream = blob.createWriteStream({
-      resumable: false,
-    });
-
-    blobStream.on('error', (err) => {
-      console.error('Blob stream error:', err);
-      res.status(500).json({ message: 'Upload failed' });
-    });
-
-    blobStream.on('finish', async () => {
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-      const Image = { data: publicUrl, contentType: req.file.mimetype };
-
-      try {
-        let experience = new Experiences({ 
-          company, 
-          position, 
-          description, 
-          responsibilities: responsibilitiesArray, 
-          technologies: techArray, 
-          startDate, 
-          endDate, 
-          current: current || false, 
-          logo,
-          Image 
-        });
-        await experience.save();
-        console.log('Experience saved:', experience);
-        res.status(201).json({ message: 'Experience added successfully', experience });
-      } catch (err) {
-        console.error('Error during experience addition:', err);
-        res.status(500).json({ message: err.message });
-      }
-    });
-
-    blobStream.end(req.file.buffer);
+    const publicUrl = `/images/${req.file.filename}`;
+    const Image = { data: publicUrl, contentType: req.file.mimetype };
+    try {
+      let experience = new Experiences({
+        company,
+        position,
+        description,
+        responsibilities: responsibilitiesArray,
+        technologies: techArray,
+        startDate,
+        endDate,
+        current: current || false,
+        logo,
+        Image
+      });
+      await experience.save();
+      console.log('Experience saved:', experience);
+      res.status(201).json({ message: 'Experience added successfully', experience });
+    } catch (err) {
+      console.error('Error during experience addition:', err);
+      res.status(500).json({ message: err.message });
+    }
   } else {
     try {
       const experience = new Experiences({ 
@@ -410,10 +353,9 @@ router.delete('/deleteProject/:id', async (req, res) => {
   }
 });
 
-router.put('/editProject/:id', verifyToken, uploadresume.single('Image'), async (req, res) => {
+router.put('/editProject/:id', verifyToken, upload.single('Image'), async (req, res) => {
   const { name, description, longDescription, technologies, githubLink, liveLink, imageUrl, featured, order } = req.body;
 
-  // Handle technologies array
   let techArray = [];
   if (technologies) {
     try {
@@ -424,44 +366,27 @@ router.put('/editProject/:id', verifyToken, uploadresume.single('Image'), async 
   }
 
   if (req.file) {
-    // File upload to Google Cloud Storage
-    const blob = bucket.file('images/' + Date.now() + path.extname(req.file.originalname));
-    const blobStream = blob.createWriteStream({
-      resumable: false,
-    });
-
-    blobStream.on('error', (err) => {
-      console.error('Blob stream error:', err);
-      res.status(500).json({ message: 'Upload failed' });
-    });
-
-    blobStream.on('finish', async () => {
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-
-      try {
-        let project = await Projects.findById(req.params.id);
-        if (!project) {
-          return res.status(404).json({ message: 'Project not found' });
-        }
-        project.name = name || project.name;
-        project.description = description || project.description;
-        project.longDescription = longDescription || project.longDescription;
-        project.technologies = techArray.length > 0 ? techArray : project.technologies;
-        project.githubLink = githubLink || project.githubLink;
-        project.liveLink = liveLink || project.liveLink;
-        project.imageUrl = publicUrl;
-        project.featured = featured !== undefined ? featured : project.featured;
-        project.order = order !== undefined ? order : project.order;
-
-        await project.save();
-        res.status(200).json({ message: 'Project updated successfully', project });
-      } catch (err) {
-        console.error('Error during project update:', err);
-        res.status(500).json({ message: err.message });
+    const publicUrl = `/images/${req.file.filename}`;
+    try {
+      let project = await Projects.findById(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
       }
-    });
-
-    blobStream.end(req.file.buffer);
+      project.name = name || project.name;
+      project.description = description || project.description;
+      project.longDescription = longDescription || project.longDescription;
+      project.technologies = techArray.length > 0 ? techArray : project.technologies;
+      project.githubLink = githubLink || project.githubLink;
+      project.liveLink = liveLink || project.liveLink;
+      project.imageUrl = publicUrl;
+      project.featured = featured !== undefined ? featured : project.featured;
+      project.order = order !== undefined ? order : project.order;
+      await project.save();
+      res.status(200).json({ message: 'Project updated successfully', project });
+    } catch (err) {
+      console.error('Error during project update:', err);
+      res.status(500).json({ message: err.message });
+    }
   } else {
     // No file upload, just update text fields
     try {
@@ -491,10 +416,9 @@ router.put('/editProject/:id', verifyToken, uploadresume.single('Image'), async 
 
 
 
-router.post('/addProject', verifyToken, uploadresume.single('Image'), async (req, res) => {
+router.post('/addProject', verifyToken, upload.single('Image'), async (req, res) => {
   const { name, description, longDescription, technologies, githubLink, liveLink, imageUrl, featured, order } = req.body;
 
-  // Handle technologies array
   let techArray = [];
   if (technologies) {
     try {
@@ -504,43 +428,27 @@ router.post('/addProject', verifyToken, uploadresume.single('Image'), async (req
     }
   }
 
-  // If there's a file, upload it to Google Cloud Storage
   if (req.file) {
-    const blob = bucket.file('images/' + Date.now() + path.extname(req.file.originalname));
-    const blobStream = blob.createWriteStream({
-      resumable: false,
-    });
-
-    blobStream.on('error', (err) => {
-      console.error('Blob stream error:', err);
-      res.status(500).json({ message: 'Upload failed' });
-    });
-
-    blobStream.on('finish', async () => {
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-
-      try {
-        const project = new Projects({
-          name,
-          description,
-          longDescription,
-          technologies: techArray,
-          githubLink,
-          liveLink,
-          imageUrl: publicUrl,
-          featured: featured || false,
-          order: order || 0
-        });
-        await project.save();
-        console.log('Project saved:', project);
-        res.status(201).json({ message: 'Project added successfully', project });
-      } catch (err) {
-        console.error('Error during project addition:', err);
-        res.status(500).json({ message: err.message });
-      }
-    });
-
-    blobStream.end(req.file.buffer);
+    const publicUrl = `/images/${req.file.filename}`;
+    try {
+      const project = new Projects({
+        name,
+        description,
+        longDescription,
+        technologies: techArray,
+        githubLink,
+        liveLink,
+        imageUrl: publicUrl,
+        featured: featured || false,
+        order: order || 0
+      });
+      await project.save();
+      console.log('Project saved:', project);
+      res.status(201).json({ message: 'Project added successfully', project });
+    } catch (err) {
+      console.error('Error during project addition:', err);
+      res.status(500).json({ message: err.message });
+    }
   } else {
     // No file uploaded, just create project with imageUrl if provided
     try {
