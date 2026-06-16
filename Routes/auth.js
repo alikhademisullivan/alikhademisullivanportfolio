@@ -38,9 +38,6 @@ const uploadResume = multer({ storage: resumeStorage });
 
 
 const secretKey = process.env.JWT_SECRET || 'your_default_secret_key';
-console.log('Secret Key:', secretKey);
-console.log('Mongo uri:', process.env.MONGO_URI);
-console.log('url:', process.env.VUE_APP_API_URL);
 
 
 
