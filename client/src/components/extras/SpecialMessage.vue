@@ -28,12 +28,12 @@
             </div>
             <p class="message">
               Every day with you is my favourite day.<br />
-              I love you more than any code I've ever written,<br />
-              and that's saying a lot.<br /><br />
-              You make everything better —<br />
+              I love you more than anything you are so beautiful<br />
+              and so perfect.<br /><br />
+              You make me so happy<br />
               just by being you. 🌸
             </p>
-            <p class="sign">— Ali xo</p>
+            <p class="sign">— Ali I love you</p>
             <div class="sparkles">
               <span v-for="s in sparkles" :key="s.id" class="sparkle" :style="s.style">✨</span>
             </div>
