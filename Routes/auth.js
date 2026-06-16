@@ -5,220 +5,218 @@ const Projects = require('../Models/Projects');
 const Experiences = require('../Models/Experiences');
 const Contact = require('../Models/Contact');
 const Skills = require('../Models/Skills');
+const Resume = require('../Models/Resume');
+const StoredImage = require('../Models/StoredImage');
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const multer = require('multer');
-const path = require('path');
 
-// Set up multer for image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'public/images');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ storage: storage });
-
-// Set up multer for resume uploads
-const resumeStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'public/resumes');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-
-const uploadResume = multer({ storage: resumeStorage });
-
-
+const memoryUpload = multer({ storage: multer.memoryStorage() });
 const secretKey = process.env.JWT_SECRET || 'your_default_secret_key';
 
-
-
-//resume
-// Set up multer for resume uploads
-// const resumeStorage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     cb(null, 'public/resumes');
-//   },
-//   filename: (req, file, cb) => {
-//     cb(null, 'resume.pdf'); // Always save the file as resume.pdf
-//   }
-// });
-
-// const resumeUpload = multer({ storage: resumeStorage });
-
-
-
-
-
-
-
-
-
-
-
-
-// Helper function to clean up optional string fields
 const cleanOptionalField = (value) => {
-  if (!value || value === 'undefined' || value.trim() === '') {
-    return null;
-  }
+  if (!value || value === 'undefined' || value.trim() === '') return null;
   return value;
 };
 
-// Middleware to verify token
+const parseJsonField = (value) => {
+  if (!value) return [];
+  try {
+    return typeof value === 'string' ? JSON.parse(value) : value;
+  } catch {
+    return [];
+  }
+};
+
 const verifyToken = (req, res, next) => {
   const token = req.headers['authorization'];
-  console.log('Authorization Header:', token); // Log the authorization header
-
-  if (!token) {
-    console.log('No token provided');
-    return res.status(403).json({ message: 'No token provided' });
-  }
+  if (!token) return res.status(403).json({ message: 'No token provided' });
 
   const tokenPart = token.split(' ')[1];
-  console.log('Token Part:', tokenPart); // Log the token part
-
   jwt.verify(tokenPart, secretKey, (err, decoded) => {
-    if (err) {
-      console.log('Token verification failed:', err); // Log the error
-      return res.status(500).json({ message: 'Failed to authenticate token' });
-    }
-    console.log('Decoded Token:', decoded); // Log the decoded token
+    if (err) return res.status(500).json({ message: 'Failed to authenticate token' });
     req.userId = decoded.id;
     next();
   });
 };
 
+// ─── Resume ──────────────────────────────────────────────────────────────────
 
+router.post('/uploadResume', verifyToken, memoryUpload.single('resume'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No file uploaded.' });
 
-
-
-router.post('/uploadResume', verifyToken, uploadResume.single('resume'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).send('No file uploaded.');
+  try {
+    await Resume.deleteMany({});
+    const resume = new Resume({
+      data: req.file.buffer,
+      contentType: req.file.mimetype,
+      filename: req.file.originalname
+    });
+    await resume.save();
+    res.status(200).json({ message: 'Resume uploaded successfully', fileUrl: '/auth/resume' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
-  const fileUrl = `/resumes/${req.file.filename}`;
-  res.status(200).send({ fileUrl });
 });
 
-
-
-
-
-
-
-
-router.get('/resumes/:filename', (req, res) => {
-  const { filename } = req.params;
-  res.redirect(`/resumes/${filename}`);
+router.get('/resume', async (req, res) => {
+  try {
+    const resume = await Resume.findOne();
+    if (!resume) return res.status(404).json({ message: 'No resume found' });
+    res.set('Content-Type', resume.contentType);
+    res.set('Content-Disposition', `inline; filename="${resume.filename}"`);
+    res.send(resume.data);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
-router.get('/image/:filename', (req, res) => {
-  const { filename } = req.params;
-  res.status(200).json({ url: `/images/${filename}` });
+// ─── Images ───────────────────────────────────────────────────────────────────
+
+router.post('/uploadImage', verifyToken, memoryUpload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No file uploaded.' });
+
+  try {
+    const image = new StoredImage({
+      data: req.file.buffer,
+      contentType: req.file.mimetype,
+      filename: req.file.originalname
+    });
+    await image.save();
+    res.status(200).json({ imageUrl: `/auth/image/${image._id}` });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
+router.get('/image/:id', async (req, res) => {
+  try {
+    const image = await StoredImage.findById(req.params.id);
+    if (!image) return res.status(404).json({ message: 'Image not found' });
+    res.set('Content-Type', image.contentType);
+    res.send(image.data);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-// router.post('/uploadResume', verifyToken, resumeUpload.single('resume'), (req, res) => {
-//   const file = req.file;
-//   if (!file) {
-//     return res.status(400).send('No file uploaded.');
-//   }
-//   res.send('Resume uploaded successfully.');
-// });
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
+// ─── Users ────────────────────────────────────────────────────────────────────
 
 router.get('/users', verifyToken, async (req, res) => {
-    try {
-        const users = await User.find({}, '_id email username isAdmin');
-        res.status(200).json(users);
-    } catch (error) {
-      console.error('Detailed error:', error);
-      res.status(500).json({ message: 'Error fetching users', error });
-    }
-  });
-
-
-
-//Experiences
-
-
-router.delete('/deleteExperience/:id', async (req, res) => {
   try {
-    
-      const experience = await Experiences.findByIdAndDelete(req.params.id);
-      if (!experience) {
-          return res.status(404).json({ message: 'Experience not found' });
-      }
-      res.status(200).json({ message: 'Experience deleted successfully' });
-  } catch (err) {
-      console.error('Error during experience deletion:', err);
-      res.status(500).json({ message: err.message });
+    const users = await User.find({}, '_id email username isAdmin');
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching users', error });
   }
 });
 
-router.put('/editExperience/:id', verifyToken, upload.single('Image'), async (req, res) => {
-  const { company, position, description, responsibilities, technologies, startDate, endDate, current, logo } = req.body;
-  
-  // Handle technologies array
-  let techArray = [];
-  if (technologies) {
-    try {
-      techArray = typeof technologies === 'string' ? JSON.parse(technologies) : technologies;
-    } catch (e) {
-      techArray = [];
-    }
+router.put('/users/:id', verifyToken, async (req, res) => {
+  try {
+    const { email, username } = req.body;
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, { email, username }, { new: true });
+    if (!updatedUser) return res.status(404).json({ message: 'User not found' });
+    res.status(200).json({ message: 'User updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating user', error });
   }
+});
 
-  let responsibilitiesArray = [];
-  if (responsibilities) {
-    try {
-      responsibilitiesArray = typeof responsibilities === 'string' ? JSON.parse(responsibilities) : responsibilities;
-    } catch (e) {
-      responsibilitiesArray = [];
-    }
+router.post('/register', async (req, res) => {
+  const { username, email, password } = req.body;
+  try {
+    const existing = await User.findOne({ email });
+    if (existing) return res.status(400).json({ message: 'User already exists' });
+
+    const user = new User({ username, email, password, isAdmin: false });
+    await user.save();
+
+    const payload = { user: { id: user.id } };
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
+      if (err) throw err;
+      res.json({ token });
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
+});
+
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+
+    const payload = { user: { id: user.id, isAdmin: user.isAdmin } };
+    jwt.sign(payload, secretKey, { expiresIn: '1h' }, (err, token) => {
+      if (err) throw err;
+      res.json({ token, isAdmin: user.isAdmin });
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ─── Experiences ──────────────────────────────────────────────────────────────
+
+router.get('/getAllExperiences', async (req, res) => {
+  try {
+    const experiences = await Experiences.find();
+    res.status(200).json(experiences);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/addExperience', verifyToken, memoryUpload.single('Image'), async (req, res) => {
+  const { company, position, description, responsibilities, technologies, startDate, endDate, current, logo } = req.body;
+  const techArray = parseJsonField(technologies);
+  const responsibilitiesArray = parseJsonField(responsibilities);
 
   try {
-    let experience = await Experiences.findById(req.params.id);
-    if (!experience) {
-      return res.status(404).json({ message: 'Experience not found' });
+    let imageUrl = null;
+    if (req.file) {
+      const image = new StoredImage({ data: req.file.buffer, contentType: req.file.mimetype, filename: req.file.originalname });
+      await image.save();
+      imageUrl = `/auth/image/${image._id}`;
     }
-    
+
+    const experience = new Experiences({
+      company, position, description,
+      responsibilities: responsibilitiesArray,
+      technologies: techArray,
+      startDate, endDate,
+      current: current || false,
+      logo,
+      imageUrl
+    });
+    await experience.save();
+    res.status(201).json({ message: 'Experience added successfully', experience });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.put('/editExperience/:id', verifyToken, memoryUpload.single('Image'), async (req, res) => {
+  const { company, position, description, responsibilities, technologies, startDate, endDate, current, logo } = req.body;
+  const techArray = parseJsonField(technologies);
+  const responsibilitiesArray = parseJsonField(responsibilities);
+
+  try {
+    const experience = await Experiences.findById(req.params.id);
+    if (!experience) return res.status(404).json({ message: 'Experience not found' });
+
+    if (req.file) {
+      const image = new StoredImage({ data: req.file.buffer, contentType: req.file.mimetype, filename: req.file.originalname });
+      await image.save();
+      experience.imageUrl = `/auth/image/${image._id}`;
+    }
+
     experience.company = company || experience.company;
     experience.position = position || experience.position;
     experience.description = description || experience.description;
@@ -232,385 +230,110 @@ router.put('/editExperience/:id', verifyToken, upload.single('Image'), async (re
     await experience.save();
     res.status(200).json({ message: 'Experience updated successfully', experience });
   } catch (err) {
-    console.error('Error during experience update:', err);
     res.status(500).json({ message: err.message });
   }
 });
 
-
-
-router.post('/addExperience', verifyToken, upload.single('Image'), async (req, res) => {
-  const { company, position, description, responsibilities, technologies, startDate, endDate, current, logo } = req.body;
-
-  // Handle technologies array
-  let techArray = [];
-  if (technologies) {
-    try {
-      techArray = typeof technologies === 'string' ? JSON.parse(technologies) : technologies;
-    } catch (e) {
-      techArray = [];
-    }
-  }
-
-  let responsibilitiesArray = [];
-  if (responsibilities) {
-    try {
-      responsibilitiesArray = typeof responsibilities === 'string' ? JSON.parse(responsibilities) : responsibilities;
-    } catch (e) {
-      responsibilitiesArray = [];
-    }
-  }
-
-  if (req.file) {
-    const publicUrl = `/images/${req.file.filename}`;
-    const Image = { data: publicUrl, contentType: req.file.mimetype };
-    try {
-      let experience = new Experiences({
-        company,
-        position,
-        description,
-        responsibilities: responsibilitiesArray,
-        technologies: techArray,
-        startDate,
-        endDate,
-        current: current || false,
-        logo,
-        Image
-      });
-      await experience.save();
-      console.log('Experience saved:', experience);
-      res.status(201).json({ message: 'Experience added successfully', experience });
-    } catch (err) {
-      console.error('Error during experience addition:', err);
-      res.status(500).json({ message: err.message });
-    }
-  } else {
-    try {
-      const experience = new Experiences({ 
-        company, 
-        position, 
-        description, 
-        responsibilities: responsibilitiesArray, 
-        technologies: techArray, 
-        startDate, 
-        endDate, 
-        current: current || false, 
-        logo
-      });
-      await experience.save();
-      console.log('Experience saved:', experience);
-      res.status(201).json({ message: 'Experience added successfully', experience });
-    } catch (err) {
-      console.error('Error during experience addition:', err);
-      res.status(500).json({ message: err.message });
-    }
-  }
-});
-
-
-
-// Route to get all projects
-router.get('/getAllExperiences', async (req, res) => {
+router.delete('/deleteExperience/:id', async (req, res) => {
   try {
-    const experiences = await Experiences.find();
-    res.status(200).json(experiences);
+    const experience = await Experiences.findByIdAndDelete(req.params.id);
+    if (!experience) return res.status(404).json({ message: 'Experience not found' });
+    res.status(200).json({ message: 'Experience deleted successfully' });
   } catch (err) {
-    console.error('Error fetching experiences:', err);
     res.status(500).json({ message: err.message });
   }
 });
 
+// ─── Projects ─────────────────────────────────────────────────────────────────
 
-
-
-
-
-
-
-
-
-
-
-
-
-  //projects
-  
-
-router.delete('/deleteProject/:id', async (req, res) => {
-  try {
-    
-      const project = await Projects.findByIdAndDelete(req.params.id);
-      if (!project) {
-          return res.status(404).json({ message: 'Project not found' });
-      }
-      res.status(200).json({ message: 'Project deleted successfully' });
-  } catch (err) {
-      console.error('Error during project deletion:', err);
-      res.status(500).json({ message: err.message });
-  }
-});
-
-router.put('/editProject/:id', verifyToken, upload.single('Image'), async (req, res) => {
-  const { name, description, longDescription, technologies, githubLink, liveLink, imageUrl, featured, order } = req.body;
-
-  let techArray = [];
-  if (technologies) {
-    try {
-      techArray = typeof technologies === 'string' ? JSON.parse(technologies) : technologies;
-    } catch (e) {
-      techArray = [];
-    }
-  }
-
-  if (req.file) {
-    const publicUrl = `/images/${req.file.filename}`;
-    try {
-      let project = await Projects.findById(req.params.id);
-      if (!project) {
-        return res.status(404).json({ message: 'Project not found' });
-      }
-      project.name = name || project.name;
-      project.description = description || project.description;
-      project.longDescription = longDescription || project.longDescription;
-      project.technologies = techArray.length > 0 ? techArray : project.technologies;
-      project.githubLink = githubLink || project.githubLink;
-      project.liveLink = liveLink || project.liveLink;
-      project.imageUrl = publicUrl;
-      project.featured = featured !== undefined ? featured : project.featured;
-      project.order = order !== undefined ? order : project.order;
-      await project.save();
-      res.status(200).json({ message: 'Project updated successfully', project });
-    } catch (err) {
-      console.error('Error during project update:', err);
-      res.status(500).json({ message: err.message });
-    }
-  } else {
-    // No file upload, just update text fields
-    try {
-      let project = await Projects.findById(req.params.id);
-      if (!project) {
-        return res.status(404).json({ message: 'Project not found' });
-      }
-      project.name = name || project.name;
-      project.description = description || project.description;
-      project.longDescription = longDescription || project.longDescription;
-      project.technologies = techArray.length > 0 ? techArray : project.technologies;
-      project.githubLink = cleanOptionalField(githubLink);
-      project.liveLink = cleanOptionalField(liveLink);
-      project.imageUrl = cleanOptionalField(imageUrl);
-      project.featured = featured !== undefined ? featured : project.featured;
-      project.order = order !== undefined ? order : project.order;
-
-      await project.save();
-      res.status(200).json({ message: 'Project updated successfully', project });
-    } catch (err) {
-      console.error('Error during project update:', err);
-      res.status(500).json({ message: err.message });
-    }
-  }
-});
-
-
-
-
-router.post('/addProject', verifyToken, upload.single('Image'), async (req, res) => {
-  const { name, description, longDescription, technologies, githubLink, liveLink, imageUrl, featured, order } = req.body;
-
-  let techArray = [];
-  if (technologies) {
-    try {
-      techArray = typeof technologies === 'string' ? JSON.parse(technologies) : technologies;
-    } catch (e) {
-      techArray = [];
-    }
-  }
-
-  if (req.file) {
-    const publicUrl = `/images/${req.file.filename}`;
-    try {
-      const project = new Projects({
-        name,
-        description,
-        longDescription,
-        technologies: techArray,
-        githubLink,
-        liveLink,
-        imageUrl: publicUrl,
-        featured: featured || false,
-        order: order || 0
-      });
-      await project.save();
-      console.log('Project saved:', project);
-      res.status(201).json({ message: 'Project added successfully', project });
-    } catch (err) {
-      console.error('Error during project addition:', err);
-      res.status(500).json({ message: err.message });
-    }
-  } else {
-    // No file uploaded, just create project with imageUrl if provided
-    try {
-      const project = new Projects({
-        name,
-        description,
-        longDescription,
-        technologies: techArray,
-        githubLink: cleanOptionalField(githubLink),
-        liveLink: cleanOptionalField(liveLink),
-        imageUrl: cleanOptionalField(imageUrl),
-        featured: featured || false,
-        order: order || 0
-      });
-      await project.save();
-      console.log('Project saved:', project);
-      res.status(201).json({ message: 'Project added successfully', project });
-    } catch (err) {
-      console.error('Error during project addition:', err);
-      res.status(500).json({ message: err.message });
-    }
-  }
-});
-
-
-// router.post('/addProject', upload.single('Image'), async (req, res) => {
-//   const { name, githublink, Description } = req.body;
-//   console.log(req.file.filename);
-//   const Image = req.file ? { data: req.file.filename, contentType: req.file.mimetype } : null;
-
-//   console.log('Received project addition request:', req.body);
-
-//   try {
-//     let project = await Projects.findOne({ name });
-//     if (project) {
-//       console.log('Project already exists');
-//       return res.status(400).json({ message: 'Project already exists' });
-//     }
-
-//     project = new Projects({ name, githublink, Description, Image });
-//     await project.save();
-//     console.log('Project saved:', project);
-
-//     res.status(201).json({ message: 'Project added successfully', project });
-//   } catch (err) {
-//     console.error('Error during project addition:', err);
-//     res.status(500).json({ message: err.message });
-//   }
-// });
-
-
-
-
-// Route to get all projects
 router.get('/getAllProjects', async (req, res) => {
   try {
     const projects = await Projects.find();
     res.status(200).json(projects);
   } catch (err) {
-    console.error('Error fetching projects:', err);
     res.status(500).json({ message: err.message });
   }
 });
 
-
-
-
-
-
-
-
-
-  
-  
-
-
-
-// Register a new user
-router.post('/register', async (req, res) => {
-    const { username, email, password } = req.body;
-    console.log('Received registration request:', req.body);
-  
-    try {
-      let user = await User.findOne({ email });
-      if (user) {
-        console.log('User already exists');
-        return res.status(400).json({ message: 'User already exists' });
-      }
-      var isAdmin = false;
-      user = new User({ username, email, password,isAdmin });
-      await user.save();
-      console.log('User saved:', user);
-  
-      const payload = { user: { id: user.id } };
-      jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
-        if (err) throw err;
-        res.json({ token });
-      });
-    } catch (err) {
-      console.error('Error during registration:', err);
-      res.status(500).json({ message: err.message });
-    }
-  });
-  
-  router.put('/users/:id', verifyToken, async (req, res) => {
-    try {
-      const { email, username } = req.body;
-      const updateData = { email, username };
-
-      const updatedUser = await User.findByIdAndUpdate(req.params.id, updateData, { new: true });
-
-      if (!updatedUser) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-        res.status(200).json({ message: 'User updated successfully' });
-    } catch (error) {
-      res.status(500).json({ message: 'Error updating user', error });
-    }
-  });
-  
-
-// Login a user
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+router.post('/addProject', verifyToken, memoryUpload.single('Image'), async (req, res) => {
+  const { name, description, longDescription, technologies, githubLink, liveLink, imageUrl, featured, order } = req.body;
+  const techArray = parseJsonField(technologies);
 
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+    let resolvedImageUrl = cleanOptionalField(imageUrl);
+    if (req.file) {
+      const image = new StoredImage({ data: req.file.buffer, contentType: req.file.mimetype, filename: req.file.originalname });
+      await image.save();
+      resolvedImageUrl = `/auth/image/${image._id}`;
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    const payload = { user: { id: user.id, isAdmin: user.isAdmin } };
-    jwt.sign(payload, secretKey, { expiresIn: '1h' }, (err, token) => {
-      if (err) throw err;
-      res.json({ 
-        token,
-        isAdmin: user.isAdmin // Send isAdmin status to the frontend
-      });
+    const project = new Projects({
+      name, description, longDescription,
+      technologies: techArray,
+      githubLink: cleanOptionalField(githubLink),
+      liveLink: cleanOptionalField(liveLink),
+      imageUrl: resolvedImageUrl,
+      featured: featured || false,
+      order: order || 0
     });
+    await project.save();
+    res.status(201).json({ message: 'Project added successfully', project });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// Contact form endpoints
+router.put('/editProject/:id', verifyToken, memoryUpload.single('Image'), async (req, res) => {
+  const { name, description, longDescription, technologies, githubLink, liveLink, imageUrl, featured, order } = req.body;
+  const techArray = parseJsonField(technologies);
+
+  try {
+    const project = await Projects.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    if (req.file) {
+      const image = new StoredImage({ data: req.file.buffer, contentType: req.file.mimetype, filename: req.file.originalname });
+      await image.save();
+      project.imageUrl = `/auth/image/${image._id}`;
+    } else if (imageUrl !== undefined) {
+      project.imageUrl = cleanOptionalField(imageUrl);
+    }
+
+    project.name = name || project.name;
+    project.description = description || project.description;
+    project.longDescription = longDescription || project.longDescription;
+    project.technologies = techArray.length > 0 ? techArray : project.technologies;
+    project.githubLink = cleanOptionalField(githubLink);
+    project.liveLink = cleanOptionalField(liveLink);
+    project.featured = featured !== undefined ? featured : project.featured;
+    project.order = order !== undefined ? order : project.order;
+
+    await project.save();
+    res.status(200).json({ message: 'Project updated successfully', project });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.delete('/deleteProject/:id', async (req, res) => {
+  try {
+    const project = await Projects.findByIdAndDelete(req.params.id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+    res.status(200).json({ message: 'Project deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ─── Contact ──────────────────────────────────────────────────────────────────
+
 router.post('/contact', async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
-
     if (!name || !email || !subject || !message) {
       return res.status(400).json({ message: 'All fields are required' });
     }
-
-    const contact = new Contact({
-      name,
-      email,
-      subject,
-      message
-    });
-
+    const contact = new Contact({ name, email, subject, message });
     await contact.save();
     res.status(201).json({ message: 'Message sent successfully', contact });
   } catch (err) {
@@ -629,14 +352,8 @@ router.get('/contacts', verifyToken, async (req, res) => {
 
 router.put('/contacts/:id/read', verifyToken, async (req, res) => {
   try {
-    const contact = await Contact.findByIdAndUpdate(
-      req.params.id,
-      { read: true },
-      { new: true }
-    );
-    if (!contact) {
-      return res.status(404).json({ message: 'Contact not found' });
-    }
+    const contact = await Contact.findByIdAndUpdate(req.params.id, { read: true }, { new: true });
+    if (!contact) return res.status(404).json({ message: 'Contact not found' });
     res.json(contact);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -646,63 +363,48 @@ router.put('/contacts/:id/read', verifyToken, async (req, res) => {
 router.delete('/contacts/:id', verifyToken, async (req, res) => {
   try {
     const contact = await Contact.findByIdAndDelete(req.params.id);
-    if (!contact) {
-      return res.status(404).json({ message: 'Contact not found' });
-    }
+    if (!contact) return res.status(404).json({ message: 'Contact not found' });
     res.json({ message: 'Contact deleted successfully' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// Skills Routes
+// ─── Skills ───────────────────────────────────────────────────────────────────
+
 router.get('/getAllSkills', async (req, res) => {
   try {
     const skills = await Skills.find().sort({ order: 1 });
     res.status(200).json(skills);
   } catch (err) {
-    console.error('Error fetching skills:', err);
     res.status(500).json({ message: err.message });
   }
 });
 
 router.post('/addSkill', verifyToken, async (req, res) => {
   const { category, skills } = req.body;
-
   if (!category || !skills || !Array.isArray(skills)) {
     return res.status(400).json({ message: 'Category and skills array are required' });
   }
-
   try {
-    const skill = new Skills({
-      category,
-      skills,
-      order: await Skills.countDocuments()
-    });
+    const skill = new Skills({ category, skills, order: await Skills.countDocuments() });
     await skill.save();
     res.status(201).json({ message: 'Skill category added successfully', skill });
   } catch (err) {
-    console.error('Error adding skill:', err);
     res.status(500).json({ message: err.message });
   }
 });
 
 router.put('/editSkill/:id', verifyToken, async (req, res) => {
   const { category, skills } = req.body;
-
   try {
-    let skill = await Skills.findById(req.params.id);
-    if (!skill) {
-      return res.status(404).json({ message: 'Skill category not found' });
-    }
-
+    const skill = await Skills.findById(req.params.id);
+    if (!skill) return res.status(404).json({ message: 'Skill category not found' });
     skill.category = category || skill.category;
     skill.skills = skills || skill.skills;
-
     await skill.save();
     res.status(200).json({ message: 'Skill category updated successfully', skill });
   } catch (err) {
-    console.error('Error updating skill:', err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -710,12 +412,9 @@ router.put('/editSkill/:id', verifyToken, async (req, res) => {
 router.delete('/deleteSkill/:id', verifyToken, async (req, res) => {
   try {
     const skill = await Skills.findByIdAndDelete(req.params.id);
-    if (!skill) {
-      return res.status(404).json({ message: 'Skill category not found' });
-    }
+    if (!skill) return res.status(404).json({ message: 'Skill category not found' });
     res.status(200).json({ message: 'Skill category deleted successfully' });
   } catch (err) {
-    console.error('Error deleting skill:', err);
     res.status(500).json({ message: err.message });
   }
 });

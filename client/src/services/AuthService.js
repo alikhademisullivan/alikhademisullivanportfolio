@@ -1,7 +1,7 @@
 import axios from 'axios';
-var url = process.env.VUE_APP_API_URL;
+
 const apiClient = axios.create({
-  baseURL: url,
+  baseURL: process.env.VUE_APP_API_URL,
   withCredentials: false,
   headers: {
     Accept: 'application/json',
@@ -9,65 +9,52 @@ const apiClient = axios.create({
   }
 });
 
-console.log(".env url "+process.env.VUE_APP_API_URL);
-
-
-
-
 export default {
-  
-  async getResume(resume) {
-    const url = process.env.VUE_APP_API_URL;
-    const publicUrl = `${url}/resumes/${resume}`;
-    return publicUrl;
+  getResumeUrl() {
+    return `${process.env.VUE_APP_API_URL}/auth/resume`;
   },
+
   register(user) {
     return apiClient.post('/auth/register', user);
   },
+
   login(user) {
     return apiClient.post('/auth/login', user).then(response => {
-
       localStorage.setItem('token', response.data.token);
-      if(response.data.isAdmin == true){
+      if (response.data.isAdmin) {
         localStorage.setItem('isAdmin', response.data.isAdmin);
-
       }
-
       return response;
     });
   },
- 
+
+  logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('isAdmin');
+  },
 
   isAuthenticated() {
     return !!localStorage.getItem('token');
   },
+
   isAdmin() {
     return !!localStorage.getItem('isAdmin');
   },
-  updateUser(user) {
-    const token = localStorage.getItem('token');
-    console.log(user._id);
-    return apiClient.put(`/auth/users/${user._id}`, user, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-  },
-  
-  logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('isAdmin');
 
-  },
-  
   getUsers() {
     const token = localStorage.getItem('token');
     return apiClient.get('/auth/users', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` }
     });
   },
+
+  updateUser(user) {
+    const token = localStorage.getItem('token');
+    return apiClient.put(`/auth/users/${user._id}`, user, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  },
+
   uploadResume(formData) {
     const token = localStorage.getItem('token');
     return apiClient.post('/auth/uploadResume', formData, {
@@ -78,4 +65,3 @@ export default {
     });
   }
 };
-
