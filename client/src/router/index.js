@@ -8,6 +8,7 @@ import Experience from '../components/Experience.vue';
 import Contact from '../components/Contact.vue';
 import LogoutUser from '../components/LogoutUser.vue';
 import SkillsHome from '../components/SkillsHome.vue';
+import NotFound from '../components/NotFound.vue';
 import AuthService from '../services/AuthService';
 
 const routes = [
@@ -33,7 +34,8 @@ const routes = [
     beforeEnter: (to, from, next) => {
       AuthService.isAdmin() ? next() : next('/login');
     }
-  }
+  },
+  { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound }
 ];
 
 const router = createRouter({

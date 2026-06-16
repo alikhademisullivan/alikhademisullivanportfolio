@@ -75,7 +75,7 @@
               <i class="fas fa-envelope"></i>
               <div>
                 <h3>Email</h3>
-                <a href="mailto:sullivanali03@gmail.com">sullivanali03@gmail.com</a>
+                <p>Use the contact form to reach me</p>
               </div>
             </div>
 
